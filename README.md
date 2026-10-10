@@ -1,0 +1,2 @@
+# SmartBG
+Hapus Background Foto
