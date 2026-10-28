@@ -1,36 +1,25 @@
-# SmartBg — Smart Background Remover
+# SmartBG — Penghapus Latar Pas Foto
 
-Aplikasi web React untuk menghapus background foto dan mengeditnya dengan Canvas. Sumber kode berasal dari arsip **Smart Background Remover.txt** tertanggal 23 September 2026.
+Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih, merah, biru, palet), merapikan hasil, mengubah rasio (1x1, 3x4, 4x6), dan mengekspor JPG/PNG. Rencananya dibungkus menjadi APK.
+
+**Versi 2** menggantikan versi lama (React + IMG.LY) yang dinyatakan gagal pada pengujian. Berkas versi lama disimpan di `archive/`.
 
 ## Fitur
-- Hapus latar otomatis dengan `@imgly/background-removal` di browser
-- Kuas hapus/kembalikan, undo/redo, dan tahan untuk melihat gambar asli
-- Latar transparan, warna, foto lain, dan efek blur
-- Latar generatif opsional lewat Gemini API, memerlukan API key pengguna
-- Ekspor PNG transparan atau JPEG (latar tidak transparan)
+- Pilih foto lalu tampil di preview sebelum diproses
+- Hapus background dengan MediaPipe Selfie Segmentation, diproses di perangkat
+- Tepi dirapikan mengikuti foto asli, warna sisa latar lama dibuang
+- Warna latar: putih, merah, biru, palet, dan warna bebas
+- Tab **Poles**: Penghapus, Kuas, Ajaib, Blur, Undo/Redo, slider Tepi, lingkaran zoom
+- Tab **Lainnya**: rasio foto 1x1, 3x4, 4x6 dengan geser dan zoom
+- Ekspor JPG atau PNG, kualitas maksimal/sedang/rendah dengan estimasi ukuran
 
-## Mulai
-Node.js 20+ (direkomendasikan 22) dan npm:
+## Struktur
+- `index.html` — seluruh aplikasi (satu berkas)
+- `lib/` — MediaPipe selfie_segmentation 0.1.1675465747 (Apache-2.0), dimuat lebih dulu sebelum CDN
+- `docs/STATUS.md` — laporan status
+- `archive/` — arsip versi lama
 
-```bash
-npm install
-npm run dev
-```
+## Menjalankan
+Berkas harus dibuka lewat server (bukan klik ganda), mis. `python3 -m http.server`, lalu buka `http://localhost:8000`. Untuk APK, `index.html` dan `lib/` dibungkus bersama agar bisa offline.
 
-Build produksi:
-
-```bash
-npm run build
-npm run preview
-```
-
-Deploy Netlify: build command `npm run build`, publish `dist`. Konfigurasi `netlify.toml` tersedia.
-
-## Privasi & keterbatasan
-- Penghapusan latar diproses di perangkat. **Koneksi diperlukan untuk mengunduh file model/wasm pada penggunaan pertama**; mode offline tidak dijamin tanpa penyimpanan model/cache yang tepat.
-- Fitur generatif online opsional **mengirim gambar dan prompt ke layanan Gemini**. Key dimasukkan pengguna, sementara berada di state aplikasi; tidak dipaketkan dalam repo. Layanan publik sebaiknya memakai backend/proxy yang aman untuk API key.
-- Model Gemini `gemini-3.1-flash-image` dari source asli belum diverifikasi berjalan dengan API saat ini. Kuota/biaya dapat berlaku sesuai layanan.
-- Status: kode dipulihkan dan scaffolding Vite disiapkan, tetapi **build dan uji perangkat belum diverifikasi** karena registry npm tidak tersedia di lingkungan penyusunan. Lihat `docs/STATUS.md`.
-- Kode asli tanpa perubahan ada di `archive/Smart Background Remover.txt`.
-
-Jangan commit API key, `node_modules`, atau output build.
+SmartBG ©2026 | totogutomo.com

@@ -1,6 +1,3 @@
+# SmartBG v2: aplikasi statis (satu index.html + folder lib/), tanpa proses build.
 [build]
-  command = "npm run build"
-  publish = "dist"
-
-[build.environment]
-  NODE_VERSION = "22"
+  publish = "."

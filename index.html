@@ -1,14 +1,1129 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f8fafc" />
-  <meta name="description" content="SmartBg — penghapus latar belakang foto dan editor gambar." />
-  <title>SmartBg — Penghapus Latar Belakang Foto</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>SmartBG</title>
+<style>
+:root{
+  --pri:#4f46e5; --pri-d:#4338ca; --ink:#1f2433; --mute:#6b7280; --line:#e5e7eb;
+  --bg:#f5f6fb; --card:#ffffff; --ok:#16a34a; --err:#dc2626;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+
+/* Header */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--card);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:20px;letter-spacing:.2px;color:var(--pri)}
+.brand small{font-weight:500;font-size:12px;color:var(--mute);margin-left:6px}
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--mute);font-weight:700}
+
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:12px;font-weight:600}
+.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.primary:active:not(:disabled){background:var(--pri-d)}
+.btn.block{width:100%}
+
+/* Export panel */
+.export-panel{position:fixed;right:10px;top:calc(58px + env(safe-area-inset-top));z-index:30;width:min(320px,calc(100vw - 20px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px rgba(20,24,50,.18);padding:14px}
+.export-panel h4{margin:0 0 8px;font-size:13px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.seg button{flex:1;border:0;background:#fff;padding:10px;font-weight:700;color:var(--mute)}
+.seg button.on{background:var(--pri);color:#fff}
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer}
+.qrow.on{border-color:var(--pri);background:#eef0ff}
+.qrow .qn{font-weight:600}
+.qrow .qs{color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--mute);margin:4px 0 12px;line-height:1.4}
+
+main{flex:1;width:100%;max-width:560px;margin:0 auto;padding:12px 14px 20px}
+
+/* Stage */
+.stage{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;display:flex;align-items:center;justify-content:center;min-height:260px;overflow:hidden}
+#view{display:block;border-radius:6px;box-shadow:0 2px 10px rgba(20,24,50,.12);
+  background-color:#fff;
+  background-image:linear-gradient(45deg,#d9dce6 25%,transparent 25%),linear-gradient(-45deg,#d9dce6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d9dce6 75%),linear-gradient(-45deg,transparent 75%,#d9dce6 75%);
+  background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0}
+#view.drag{touch-action:none;cursor:grab}
+#view.paint{touch-action:none;cursor:crosshair}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mute);text-align:center;padding:20px}
+.empty b{color:var(--ink);font-size:16px}
+.badge{position:absolute;left:18px;top:18px;pointer-events:none;background:rgba(31,36,51,.78);color:#fff;font-size:12px;padding:4px 10px;border-radius:999px}
+.busy{position:absolute;inset:0;background:rgba(255,255,255,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:5;text-align:center;padding:16px}
+.spin{width:34px;height:34px;border-radius:50%;border:4px solid #dfe2ff;border-top-color:var(--pri);animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Lingkaran zoom */
+#loupe{position:absolute;top:14px;left:14px;width:120px;height:120px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(20,24,50,.35);z-index:4;pointer-events:none;background:#d9dce6}
+#loupe.right{left:auto;right:14px}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;margin:14px 0 10px;background:#e9ebf5;padding:4px;border-radius:14px}
+.tabs button{flex:1;border:0;background:transparent;padding:10px;border-radius:10px;font-weight:700;color:var(--mute)}
+.tabs button.on{background:#fff;color:var(--pri);box-shadow:0 1px 4px rgba(20,24,50,.12)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.msg{min-height:20px;margin:10px 2px 0;font-size:14px;color:var(--mute)}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.panel h3{margin:14px 0 8px;font-size:14px}
+.panel h3:first-child{margin-top:0}
+
+/* Swatches */
+.sw{display:flex;flex-wrap:wrap;gap:10px}
+.sw button{width:44px;height:44px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);padding:0;position:relative;flex:none}
+.sw button.on{box-shadow:0 0 0 3px var(--pri)}
+.sw button.none{background-color:#fff;background-image:linear-gradient(45deg,#cfd3df 25%,transparent 25%),linear-gradient(-45deg,#cfd3df 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#cfd3df 75%),linear-gradient(-45deg,transparent 75%,#cfd3df 75%);background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
+.swl{margin-bottom:6px;gap:14px}
+.swl .it{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--mute)}
+.sw.small button{width:34px;height:34px}
+.picker{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--mute)}
+.picker input{width:44px;height:34px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff}
+.locked{opacity:.45;pointer-events:none}
+
+/* Chips & slider */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{flex:1;min-width:64px;padding:11px 8px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:700;color:var(--ink)}
+.chips button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.zoomrow{display:flex;align-items:center;gap:10px;margin-top:14px}
+.zoomrow input[type=range]{flex:1;accent-color:var(--pri)}
+.zoomrow span{width:48px;text-align:right;font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px}
+.zoomrow span.lbl{width:auto;min-width:68px;text-align:left;color:var(--ink);font-weight:600}
+
+/* Poles */
+.toolgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 4px}
+.toolgrid button{padding:11px 4px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:700;font-size:13px;color:var(--ink)}
+.toolgrid button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+#optMode{margin:12px 0 0}
+
+footer{padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;color:var(--mute);font-size:13px}
+
+dialog{border:0;border-radius:18px;padding:22px;max-width:340px;width:calc(100vw - 40px);text-align:center;box-shadow:0 20px 50px rgba(20,24,50,.3)}
+dialog::backdrop{background:rgba(20,24,50,.45)}
+dialog h2{margin:0 0 4px;color:var(--pri)}
+dialog p{margin:4px 0;color:var(--mute);font-size:14px}
+dialog .who{color:var(--ink);font-weight:700;font-size:15px;margin-top:14px}
+dialog .sch{color:var(--ink);font-size:14px}
+dialog .btn{margin-top:16px}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+
+<header class="top">
+  <div class="brand">SmartBG<small>Pas Foto</small></div>
+  <div class="top-actions">
+    <button class="icon-btn" id="btnAbout" aria-label="Tentang">i</button>
+    <button class="btn primary" id="btnExport" disabled>Ekspor ▾</button>
+  </div>
+</header>
+
+<div class="export-panel" id="exportPanel" hidden>
+  <h4>Format</h4>
+  <div class="seg" id="fmtSeg">
+    <button data-fmt="jpg" class="on">JPG</button>
+    <button data-fmt="png">PNG</button>
+  </div>
+  <h4>Kualitas (opsional)</h4>
+  <div id="qList">
+    <div class="qrow on" data-q="max"><span class="qn">Maksimal</span><span class="qs" id="qs-max">…</span></div>
+    <div class="qrow" data-q="mid"><span class="qn">Sedang</span><span class="qs" id="qs-mid">…</span></div>
+    <div class="qrow" data-q="low"><span class="qn">Rendah</span><span class="qs" id="qs-low">…</span></div>
+  </div>
+  <p class="note" id="expNote"></p>
+  <button class="btn primary block" id="btnSave">Simpan</button>
+</div>
+
+<main>
+  <section class="stage" id="stage">
+    <canvas id="view" width="10" height="10" hidden></canvas>
+    <canvas id="loupe" width="240" height="240" hidden></canvas>
+    <div class="empty" id="empty"><b>Belum ada foto</b><span>Ketuk "Pilih Foto" di bawah untuk mulai.</span></div>
+    <span class="badge" id="badge" hidden></span>
+    <div class="busy" id="busy" hidden><div class="spin"></div><p id="busyText">Memproses…</p></div>
+  </section>
+
+  <nav class="tabs">
+    <button data-tab="utama" class="on">Utama</button>
+    <button data-tab="poles">Poles</button>
+    <button data-tab="lainnya">Lainnya</button>
+  </nav>
+
+  <section class="panel" id="tab-utama">
+    <input type="file" id="file" accept="image/*" hidden>
+    <div class="row">
+      <button class="btn" id="btnPick">Pilih Foto</button>
+      <button class="btn primary" id="btnRemove" disabled>Hapus Background</button>
+    </div>
+    <p class="msg" id="msg"></p>
+
+    <div id="colorBox" class="locked">
+      <h3>Warna background</h3>
+      <div class="sw swl" id="mainSw"></div>
+      <h3>Palet warna</h3>
+      <div class="sw small" id="paletteSw"></div>
+      <label class="picker">Warna lain: <input type="color" id="customColor" value="#ffffff"></label>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-poles" hidden>
+    <p class="note" id="polesLock">Hapus background dulu di tab Utama, lalu rapikan hasilnya di sini.</p>
+    <div id="polesBox">
+      <div class="row">
+        <button class="btn" id="btnUndo">↶ Undo</button>
+        <button class="btn" id="btnRedo">↷ Redo</button>
+      </div>
+      <div class="toolgrid" id="tools">
+        <button data-t="erase" class="on">Penghapus</button>
+        <button data-t="brush">Kuas</button>
+        <button data-t="magic">Ajaib</button>
+        <button data-t="blur">Blur</button>
+      </div>
+      <div class="seg" id="optMode">
+        <button data-m="restore" class="on">Pulihkan</button>
+        <button data-m="erase">Hapus</button>
+      </div>
+      <div class="zoomrow" id="optSize">
+        <span class="lbl">Ukuran</span>
+        <input type="range" id="size" min="4" max="80" value="24">
+        <span id="sizeVal">24</span>
+      </div>
+      <div class="zoomrow" id="optSens">
+        <span class="lbl">Kepekaan</span>
+        <input type="range" id="sens" min="1" max="100" value="30">
+        <span id="sensVal">30</span>
+      </div>
+      <p class="note" id="toolHint" style="margin-top:12px"></p>
+      <h3 style="margin-top:16px">Tepi foto</h3>
+      <div class="zoomrow" style="margin-top:6px">
+        <span class="lbl" style="min-width:0">Tajam</span>
+        <input type="range" id="edge" min="0" max="100" value="50">
+        <span class="lbl" style="min-width:0;text-align:right">Halus</span>
+      </div>
+      <p class="note" style="margin-top:6px">Geser lalu lepas. Bisa diulang beberapa kali.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-lainnya" hidden>
+    <h3>Ubah rasio foto</h3>
+    <div class="chips" id="ratioChips">
+      <button data-r="asli" class="on">Asli</button>
+      <button data-r="1x1">1x1</button>
+      <button data-r="3x4">3x4</button>
+      <button data-r="4x6">4x6</button>
+    </div>
+    <div class="zoomrow">
+      <span class="lbl">Zoom</span>
+      <input type="range" id="zoom" min="50" max="300" value="100">
+      <span id="zoomVal">100%</span>
+    </div>
+    <p class="note">Geser foto dengan jari, cubit untuk memperbesar atau memperkecil.</p>
+    <button class="btn block" id="btnReset">Atur ulang posisi</button>
+  </section>
+</main>
+
+<footer>SmartBG ©2026 | totogutomo.com</footer>
+
+<dialog id="about">
+  <h2>SmartBG</h2>
+  <p>Penghapus latar belakang pas foto</p>
+  <p>Versi 2.2</p>
+  <p class="who">Toto Gutomo, S.Pd., Gr., M.Pd., CPSS</p>
+  <p class="sch">Guru SMA Negeri 3 Maliku</p>
+  <p>totogutomo.com</p>
+  <button class="btn primary" id="aboutClose">Tutup</button>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ====== Pengaturan ====== */
+const MAXSIDE = 2000; // sisi terpanjang foto kerja (px)
+const MP_VERSION = '0.1.1675465747';
+// Urutan sumber MediaPipe: folder lokal "lib/" (untuk APK/offline), lalu CDN.
+const MP_SOURCES = ['lib/', 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@' + MP_VERSION + '/'];
+const RATIOS = { '1x1':[1,1], '3x4':[3,4], '4x6':[4,6] };
+const QUAL = { max:{jpg:0.95, png:1},  mid:{jpg:0.8, png:0.7},  low:{jpg:0.55, png:0.5} };
+const MAIN_COLORS = [
+  {n:'Transparan', c:null},
+  {n:'Putih', c:'#ffffff'},
+  {n:'Merah', c:'#d50000'},
+  {n:'Biru',  c:'#0a4fd0'}
+];
+const PALETTE = ['#e5e7eb','#fde68a','#fbcfe8','#bfdbfe','#a7f3d0','#ddd6fe','#fdba74','#94a3b8','#16a34a','#0ea5e9','#7c3aed','#111827'];
+const UNDO_MAX = 12;
+const HINTS = {
+  erase:'Gosok bagian yang ingin dihapus.',
+  brush:'Gosok untuk mengembalikan bagian foto yang ikut terhapus. Foto asli tampil samar sebagai panduan.',
+  magic:'Ketuk area berwarna mirip. Geser jari untuk membidik, lepas untuk menerapkan.',
+  blur:'Gosok tepi potongan untuk menghaluskannya.'
+};
+
+/* ====== Status ====== */
+const S = {
+  img:null, imgData:null, fg:null, mask:null, mctx:null, cut:null, cutDirty:false, bg:null,
+  hist:[], redo:[],
+  ratio:'asli', zoom:1, offX:0, offY:0,
+  fmt:'jpg', q:'max', tab:'utama', busy:false
+};
+const E = { // status tab Poles
+  z:1, px:0, py:0, fit:1, cssW:1, cssH:1,
+  tool:'erase', mode:'restore',
+  size:{erase:24, brush:24, blur:30}, sens:{magic:30, blur:40},
+  cursor:null
+};
+const view = $('view'), vctx = view.getContext('2d');
+const loupe = $('loupe'), lctx = loupe.getContext('2d');
+
+function mk(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function composeCut(){
+  const W=S.img.width, H=S.img.height;
+  if(!S.cut || S.cut.width!==W || S.cut.height!==H) S.cut=mk(W,H);
+  const c=S.cut.getContext('2d');
+  c.globalCompositeOperation='source-over'; c.clearRect(0,0,W,H);
+  c.drawImage(S.fg||S.img,0,0);
+  c.globalCompositeOperation='destination-in'; c.drawImage(S.mask,0,0);
+  c.globalCompositeOperation='source-over';
+  S.cutDirty=false;
+}
+function source(){
+  if(S.mask){ if(S.cutDirty||!S.cut) composeCut(); return S.cut; }
+  return S.img;
+}
+function say(t, cls){ const m=$('msg'); m.textContent=t||''; m.className='msg'+(cls?' '+cls:''); }
+function setBusy(on, text){ S.busy=on; $('busy').hidden=!on; if(text) $('busyText').textContent=text; syncButtons(); }
+
+/* ====== Menggambar ====== */
+function fitCanvas(W,H){
+  const stage=$('stage');
+  const cw=Math.max(120, stage.clientWidth-24);
+  const maxH=Math.min(window.innerHeight*0.55, 560);
+  const k=Math.min(cw/W, maxH/H);
+  const cssW=Math.max(40,Math.round(W*k)), cssH=Math.max(40,Math.round(H*k));
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const pw=Math.round(cssW*dpr), ph=Math.round(cssH*dpr);
+  if(view.width!==pw||view.height!==ph){ view.width=pw; view.height=ph; }
+  view.style.width=cssW+'px'; view.style.height=cssH+'px';
+  return {cssW,cssH,pw,ph};
+}
+function frameDims(){
+  const s = source(), sw=s.width, sh=s.height;
+  if(S.ratio==='asli') return {W:sw,H:sh};
+  const [rw,rh]=RATIOS[S.ratio], a=rw/rh;
+  if(a > sw/sh) return {W:sw, H:Math.max(1,Math.round(sw/a))};
+  return {W:Math.max(1,Math.round(sh*a)), H:sh};
+}
+function placement(W,H){
+  const s=source(), dw=s.width*S.zoom, dh=s.height*S.zoom;
+  const maxX=Math.abs(dw-W)/2, maxY=Math.abs(dh-H)/2;
+  let ox=clamp(S.offX*W,-maxX,maxX);
+  let oy=clamp(S.offY*H,-maxY,maxY);
+  S.offX=ox/W; S.offY=oy/H;
+  return {x:(W-dw)/2+ox, y:(H-dh)/2+oy, dw, dh};
+}
+function paint(ctx,W,H,fill){
+  if(fill){ ctx.fillStyle=fill; ctx.fillRect(0,0,W,H); } else ctx.clearRect(0,0,W,H);
+  const p=placement(W,H);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(source(),p.x,p.y,p.dw,p.dh);
+}
+function renderFrame(){
+  const {W,H}=frameDims();
+  const f=fitCanvas(W,H);
+  vctx.setTransform(f.pw/W,0,0,f.ph/H,0,0);
+  paint(vctx,W,H,S.bg);
+  $('badge').textContent = S.mask ? 'Tanpa background' : 'Foto asli';
+  scheduleEstimate();
+}
+function clampPan(){
+  const W=S.img.width, H=S.img.height;
+  const mx=Math.max(0,(W*E.fit*E.z-E.cssW)/2), my=Math.max(0,(H*E.fit*E.z-E.cssH)/2);
+  E.px=clamp(E.px,-mx,mx); E.py=clamp(E.py,-my,my);
+}
+function renderEdit(){
+  const W=S.img.width, H=S.img.height;
+  const f=fitCanvas(W,H);
+  E.cssW=f.cssW; E.cssH=f.cssH; E.fit=f.cssW/W;
+  clampPan();
+  const dpr=f.pw/f.cssW, s=E.fit*E.z*dpr;
+  const tx=(E.cssW/2+E.px)*dpr - W/2*s, ty=(E.cssH/2+E.py)*dpr - H/2*s;
+  const cut=source();
+  vctx.setTransform(1,0,0,1,0,0); vctx.clearRect(0,0,f.pw,f.ph);
+  if(S.bg){ vctx.fillStyle=S.bg; vctx.fillRect(0,0,f.pw,f.ph); }
+  vctx.setTransform(s,0,0,s,tx,ty);
+  vctx.imageSmoothingEnabled=true; vctx.imageSmoothingQuality='high';
+  if(E.tool==='brush' || (E.tool==='magic' && E.mode==='restore')){
+    vctx.globalAlpha=0.22; vctx.drawImage(S.img,0,0); vctx.globalAlpha=1;
+  }
+  vctx.drawImage(cut,0,0);
+  if(E.cursor){
+    const r=view.getBoundingClientRect();
+    const cx=(E.cursor.cx-r.left)*dpr, cy=(E.cursor.cy-r.top)*dpr;
+    const rad=(E.tool==='magic'?8:E.size[E.tool]/2)*dpr;
+    vctx.setTransform(1,0,0,1,0,0);
+    vctx.beginPath(); vctx.arc(cx,cy,rad,0,Math.PI*2);
+    vctx.lineWidth=3*dpr; vctx.strokeStyle='rgba(0,0,0,.55)'; vctx.stroke();
+    vctx.lineWidth=1.5*dpr; vctx.strokeStyle='#fff'; vctx.stroke();
+  }
+  $('badge').textContent='Mode Poles';
+}
+function render(){
+  const has=!!S.img;
+  view.hidden=!has; $('empty').hidden=has; $('badge').hidden=!has;
+  if(has){ if(S.tab==='poles' && S.mask) renderEdit(); else renderFrame(); }
+  syncButtons();
+}
+let rafId=0;
+function requestDraw(){
+  if(rafId) return;
+  rafId=requestAnimationFrame(()=>{ rafId=0; render(); drawLoupe(); });
+}
+
+/* ====== Muat foto ====== */
+async function decode(file){
+  try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }
+  catch(e){
+    return await new Promise((res,rej)=>{
+      const u=URL.createObjectURL(file), im=new Image();
+      im.onload=()=>{URL.revokeObjectURL(u);res(im)};
+      im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('decode'))};
+      im.src=u;
+    });
+  }
+}
+async function loadFile(file){
+  if(!file) return;
+  try{
+    setBusy(true,'Membuka foto…');
+    const bmp=await decode(file);
+    const w0=bmp.width||bmp.naturalWidth, h0=bmp.height||bmp.naturalHeight;
+    const sc=Math.min(1, MAXSIDE/Math.max(w0,h0));
+    const c=mk(Math.max(1,Math.round(w0*sc)), Math.max(1,Math.round(h0*sc)));
+    const cx=c.getContext('2d'); cx.imageSmoothingQuality='high'; cx.drawImage(bmp,0,0,c.width,c.height);
+    if(bmp.close) bmp.close();
+    S.img=c; S.imgData=null; S.fg=null; S.mask=null; S.mctx=null; S.cut=null; S.bg=null;
+    S.hist=[]; S.redo=[];
+    S.zoom=1; S.offX=0; S.offY=0; E.z=1; E.px=0; E.py=0;
+    $('zoom').value=100; $('zoomVal').textContent='100%';
+    say('Foto sudah dipilih. Periksa preview, lalu ketuk "Hapus Background".');
+    buildSwatches();
+  }catch(e){
+    S.img=null; S.mask=null; S.cut=null; say('Foto tidak bisa dibuka. Coba foto lain (JPG atau PNG).','err');
+  }finally{
+    setBusy(false); render();
+  }
+}
+
+/* ====== MediaPipe ====== */
+let segPromise=null, pending=null;
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src; s.async=true;
+    s.onload=res; s.onerror=()=>{s.remove();rej(new Error('script '+src))};
+    document.head.appendChild(s);
+  });
+}
+function getSegmenter(){
+  if(segPromise) return segPromise;
+  segPromise=(async()=>{
+    let lastErr;
+    for(const base of MP_SOURCES){
+      try{
+        if(typeof window.SelfieSegmentation==='undefined') await loadScript(base+'selfie_segmentation.js');
+        const seg=new window.SelfieSegmentation({locateFile:f=>base+f});
+        seg.setOptions({modelSelection:0});
+        seg.onResults(r=>{ if(pending) pending(r); });
+        await seg.initialize();
+        return seg;
+      }catch(e){ lastErr=e; try{ delete window.SelfieSegmentation; }catch(_){} }
+    }
+    throw lastErr||new Error('mediapipe');
+  })();
+  segPromise.catch(()=>{ segPromise=null; });
+  return segPromise;
+}
+async function segOnce(seg,cnv){
+  const got=new Promise(res=>{ pending=res; });
+  await seg.send({image:cnv});
+  const r=await got; pending=null;
+  return r.segmentationMask;
+}
+function scaledCrop(src,sx,sy,sw,sh,max){
+  const k=Math.min(1,max/Math.max(sw,sh));
+  const c=mk(Math.max(1,Math.round(sw*k)),Math.max(1,Math.round(sh*k)));
+  const x=c.getContext('2d'); x.imageSmoothingQuality='high';
+  x.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);
+  return c;
+}
+// Baca mask (0-255) dari kanal yang membawa nilai (alpha atau merah)
+function readMask(m,w,h){
+  const c=mk(w,h), x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingQuality='high'; x.drawImage(m,0,0,w,h);
+  const d=x.getImageData(0,0,w,h).data;
+  let mn=255,mx=0;
+  for(let i=3;i<d.length;i+=4*37){ const a=d[i]; if(a<mn)mn=a; if(a>mx)mx=a; }
+  const off=(mx-mn>40)?3:0, out=new Uint8Array(w*h);
+  for(let i=0,j=off;i<out.length;i++,j+=4) out[i]=d[j];
+  return out;
+}
+// Ambil bagian terbesar yang tersambung (membuang serpihan)
+function largest(a,w,h,th){
+  const n=w*h, lab=new Int32Array(n), st=new Int32Array(n);
+  let id=0, best=0, bestN=0, bb=null;
+  for(let s=0;s<n;s++){
+    if(a[s]<th||lab[s]) continue;
+    id++; let sp=0, cnt=0, x0=w, y0=h, x1=0, y1=0;
+    st[sp++]=s; lab[s]=id;
+    while(sp){
+      const i=st[--sp], x=i%w, y=(i/w)|0; cnt++;
+      if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+      if(x>0   &&!lab[i-1]&&a[i-1]>=th){lab[i-1]=id;st[sp++]=i-1;}
+      if(x<w-1 &&!lab[i+1]&&a[i+1]>=th){lab[i+1]=id;st[sp++]=i+1;}
+      if(y>0   &&!lab[i-w]&&a[i-w]>=th){lab[i-w]=id;st[sp++]=i-w;}
+      if(y<h-1 &&!lab[i+w]&&a[i+w]>=th){lab[i+w]=id;st[sp++]=i+w;}
+    }
+    if(cnt>bestN){ bestN=cnt; best=id; bb={x0,y0,x1,y1}; }
+  }
+  if(!best || bestN < n*0.005) return null;
+  const keep=new Uint8Array(n);
+  for(let i=0;i<n;i++) if(lab[i]===best) keep[i]=1;
+  return Object.assign({keep},bb);
+}
+function dilate(k,w,h,times){
+  let a=k;
+  for(let t=0;t<times;t++){
+    const b=a.slice();
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const i=y*w+x; if(a[i]) continue;
+      if((x>0&&a[i-1])||(x<w-1&&a[i+1])||(y>0&&a[i-w])||(y<h-1&&a[i+w])) b[i]=1;
+    }
+    a=b;
+  }
+  return a;
+}
+// Haluskan mask (box blur dua arah, tepi gambar dijaga)
+function boxBlur(a,w,h,r){
+  if(r<1) return a;
+  const tmp=new Float32Array(w*h), out=new Uint8Array(w*h), d=2*r+1;
+  for(let y=0;y<h;y++){
+    const o=y*w; let s=0;
+    for(let k=-r;k<=r;k++) s+=a[o+clamp(k,0,w-1)];
+    for(let x=0;x<w;x++){
+      tmp[o+x]=s/d;
+      s+=a[o+Math.min(w-1,x+r+1)]-a[o+Math.max(0,x-r)];
+    }
+  }
+  for(let x=0;x<w;x++){
+    let s=0;
+    for(let k=-r;k<=r;k++) s+=tmp[clamp(k,0,h-1)*w+x];
+    for(let y=0;y<h;y++){
+      out[y*w+x]=s/d+0.5;
+      s+=tmp[Math.min(h-1,y+r+1)*w+x]-tmp[Math.max(0,y-r)*w+x];
+    }
+  }
+  return out;
+}
+/* ====== Tepi: penyaring berpemandu foto, buang warna sisa ====== */
+function boxMean(src,w,h,r){
+  const tmp=new Float32Array(w*h), out=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const o=y*w; let s=0;
+    for(let k=0;k<=Math.min(r,w-1);k++) s+=src[o+k];
+    for(let x=0;x<w;x++){
+      const x0=x-r>0?x-r:0, x1=x+r<w-1?x+r:w-1;
+      tmp[o+x]=s/(x1-x0+1);
+      if(x+r+1<w) s+=src[o+x+r+1];
+      if(x-r>=0) s-=src[o+x-r];
+    }
+  }
+  for(let x=0;x<w;x++){
+    let s=0;
+    for(let k=0;k<=Math.min(r,h-1);k++) s+=tmp[k*w+x];
+    for(let y=0;y<h;y++){
+      const y0=y-r>0?y-r:0, y1=y+r<h-1?y+r:h-1;
+      out[y*w+x]=s/(y1-y0+1);
+      if(y+r+1<h) s+=tmp[(y+r+1)*w+x];
+      if(y-r>=0) s-=tmp[(y-r)*w+x];
+    }
+  }
+  return out;
+}
+// Penyaring berpemandu warna: tepi mask dibuat mengikuti garis tepi foto sebenarnya
+function guidedColor(I0,I1,I2,p,w,h,r,eps){
+  const n=w*h, bx=a=>boxMean(a,w,h,r);
+  const mul=(a,b)=>{ const o=new Float32Array(n); for(let i=0;i<n;i++) o[i]=a[i]*b[i]; return o; };
+  const m0=bx(I0), m1=bx(I1), m2=bx(I2), mp=bx(p);
+  const c0=bx(mul(I0,p)), c1=bx(mul(I1,p)), c2=bx(mul(I2,p));
+  const v00=bx(mul(I0,I0)), v01=bx(mul(I0,I1)), v02=bx(mul(I0,I2));
+  const v11=bx(mul(I1,I1)), v12=bx(mul(I1,I2)), v22=bx(mul(I2,I2));
+  const a0=new Float32Array(n), a1=new Float32Array(n), a2=new Float32Array(n), b=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const k0=c0[i]-m0[i]*mp[i], k1=c1[i]-m1[i]*mp[i], k2=c2[i]-m2[i]*mp[i];
+    const s00=v00[i]-m0[i]*m0[i]+eps, s01=v01[i]-m0[i]*m1[i], s02=v02[i]-m0[i]*m2[i];
+    const s11=v11[i]-m1[i]*m1[i]+eps, s12=v12[i]-m1[i]*m2[i], s22=v22[i]-m2[i]*m2[i]+eps;
+    const i00=s11*s22-s12*s12, i01=s02*s12-s01*s22, i02=s01*s12-s02*s11;
+    const i11=s00*s22-s02*s02, i12=s01*s02-s00*s12, i22=s00*s11-s01*s01;
+    const det=(s00*i00+s01*i01+s02*i02)||1e-9;
+    const x0=(i00*k0+i01*k1+i02*k2)/det, x1=(i01*k0+i11*k1+i12*k2)/det, x2=(i02*k0+i12*k1+i22*k2)/det;
+    a0[i]=x0; a1[i]=x1; a2[i]=x2; b[i]=mp[i]-x0*m0[i]-x1*m1[i]-x2*m2[i];
+  }
+  const ma0=bx(a0), ma1=bx(a1), ma2=bx(a2), mb=bx(b), q=new Uint8Array(n);
+  for(let i=0;i<n;i++){
+    const v=ma0[i]*I0[i]+ma1[i]*I1[i]+ma2[i]*I2[i]+mb[i];
+    q[i]=v<=0?0:(v>=1?255:v*255+0.5);
+  }
+  return q;
+}
+function upR(a,w,h,W,H){
+  const c=mk(w,h), x=c.getContext('2d'), id=x.createImageData(w,h), d=id.data;
+  for(let i=0,j=0;i<a.length;i++,j+=4){ d[j]=d[j+1]=d[j+2]=a[i]; d[j+3]=255; }
+  x.putImageData(id,0,0);
+  const c2=mk(W,H), x2=c2.getContext('2d',{willReadFrequently:true});
+  x2.imageSmoothingQuality='high'; x2.drawImage(c,0,0,W,H);
+  const e=x2.getImageData(0,0,W,H).data, out=new Uint8Array(W*H);
+  for(let i=0,j=0;i<out.length;i++,j+=4) out[i]=e[j];
+  return out;
+}
+function refineMask(g,p8,cw,ch){
+  const gw=g.width, gh=g.height, n=gw*gh;
+  const d=g.getContext('2d',{willReadFrequently:true}).getImageData(0,0,gw,gh).data;
+  const I0=new Float32Array(n), I1=new Float32Array(n), I2=new Float32Array(n), p=new Float32Array(n);
+  for(let i=0,j=0;i<n;i++,j+=4){ I0[i]=d[j]/255; I1[i]=d[j+1]/255; I2[i]=d[j+2]/255; p[i]=p8[i]/255; }
+  const r=Math.max(3,Math.round(Math.max(gw,gh)/120));
+  return upR(guidedColor(I0,I1,I2,p,gw,gh,r,4e-4),gw,gh,cw,ch);
+}
+function erodeAlpha(a,w,h,n){
+  for(let t=0;t<n;t++){
+    const b=a.slice();
+    for(let y=0;y<h;y++){
+      const o=y*w;
+      for(let x=0;x<w;x++){
+        const i=o+x, v=a[i]; if(!v) continue;
+        let m=v;
+        if(x>0&&a[i-1]<m) m=a[i-1];
+        if(x<w-1&&a[i+1]<m) m=a[i+1];
+        if(y>0&&a[i-w]<m) m=a[i-w];
+        if(y<h-1&&a[i+w]<m) m=a[i+w];
+        b[i]=m;
+      }
+    }
+    a=b;
+  }
+  return a;
+}
+// Ganti warna di tepi (sisa warna latar lama) dengan warna dari bagian dalam tubuh di dekatnya
+function decontam(){
+  if(!S.mask) return;
+  const W=S.img.width, H=S.img.height, n=W*H;
+  if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
+  const al=snapshot(), px=new Uint8ClampedArray(S.imgData);
+  const sol=new Uint8Array(n);
+  for(let i=0;i<n;i++) sol[i]=al[i]>=235?1:0;
+  const fill=new Uint8Array(n);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const i=y*W+x; if(!sol[i]) continue;
+    if((x===0||sol[i-1])&&(x===W-1||sol[i+1])&&(y===0||sol[i-W])&&(y===H-1||sol[i+W])) fill[i]=1;
+  }
+  const K=3+Math.round(Math.max(W,H)/700);
+  for(let pass=0;pass<K;pass++){
+    const idx=[], col=[];
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++){
+        const i=y*W+x; if(fill[i]||!al[i]) continue;
+        let r=0,g=0,b=0,c=0;
+        for(let dy=-1;dy<=1;dy++){
+          const yy=y+dy; if(yy<0||yy>=H) continue;
+          for(let dx=-1;dx<=1;dx++){
+            const xx=x+dx; if(xx<0||xx>=W||(!dx&&!dy)) continue;
+            const j=yy*W+xx; if(!fill[j]) continue;
+            r+=px[j*4]; g+=px[j*4+1]; b+=px[j*4+2]; c++;
+          }
+        }
+        if(c){ idx.push(i); col.push(r/c,g/c,b/c); }
+      }
+    }
+    if(!idx.length) break;
+    for(let k=0;k<idx.length;k++){
+      const i=idx[k]*4; px[i]=col[k*3]; px[i+1]=col[k*3+1]; px[i+2]=col[k*3+2]; fill[idx[k]]=1;
+    }
+  }
+  S.fg=mk(W,H); S.fg.getContext('2d').putImageData(new ImageData(px,W,H),0,0);
+  S.cutDirty=true;
+}
+// Slider "Tepi": t<0 lebih tajam (sedikit ke dalam), t>0 lebih halus
+function adjustAlpha(base,W,H,t){
+  if(Math.abs(t)<0.02) return base;
+  const sc=Math.max(1,Math.max(W,H)/1000);
+  if(t>0) return boxBlur(base,W,H,Math.max(1,Math.round(t*5*sc)));
+  const u=-t, a=boxBlur(base,W,H,Math.max(1,Math.round(sc))), out=new Uint8Array(W*H);
+  const k=1+u*7, c=0.5+0.12*u;
+  for(let i=0;i<out.length;i++){
+    const v=(a[i]/255-c)*k+0.5;
+    out[i]=v<=0?0:(v>=1?255:v*255+0.5);
+  }
+  return out;
+}
+
+async function removeBg(){
+  if(!S.img||S.busy) return;
+  try{
+    setBusy(true,'Memuat model penghapus background…');
+    const seg=await getSegmenter();
+    const W=S.img.width, H=S.img.height;
+
+    // Langkah 1: cari letak orang
+    $('busyText').textContent='Mencari orang di foto…';
+    const small=scaledCrop(S.img,0,0,W,H,384);
+    const a1=readMask(await segOnce(seg,small),small.width,small.height);
+    const c1=largest(a1,small.width,small.height,128);
+    if(!c1) throw new Error('noperson');
+
+    // Langkah 2: fokus ke orang, proses ulang lebih detail
+    $('busyText').textContent='Menghapus background…';
+    const f=W/small.width;
+    const bx0=c1.x0*f, by0=c1.y0*f, bx1=(c1.x1+1)*f, by1=(c1.y1+1)*f, bw=bx1-bx0, bh=by1-by0;
+    let cx0=Math.max(0,Math.floor(bx0-bw*0.15)), cy0=Math.max(0,Math.floor(by0-bh*0.15));
+    let cx1=Math.min(W,Math.ceil(bx1+bw*0.15)), cy1=Math.min(H,Math.ceil(by1+bh*0.08));
+    if((cx1-cx0)*(cy1-cy0) > 0.8*W*H){ cx0=0; cy0=0; cx1=W; cy1=H; }
+    const cw=cx1-cx0, ch=cy1-cy0;
+    const crop=scaledCrop(S.img,cx0,cy0,cw,ch,1024);
+    const m2=await segOnce(seg,crop);
+    const lk=Math.min(1,256/Math.max(cw,ch));
+    const lw=Math.max(1,Math.round(cw*lk)), lh=Math.max(1,Math.round(ch*lk));
+    const c2=largest(readMask(m2,lw,lh),lw,lh,128);
+    const gate=c2?dilate(c2.keep,lw,lh,2):null;
+    const g=scaledCrop(S.img,cx0,cy0,cw,ch,900);
+    const hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch);
+
+    // Langkah 3: haluskan tepi, susun mask utuh
+    const alpha=new Uint8Array(W*H);
+    for(let y=0;y<ch;y++){
+      const ly=Math.min(lh-1,(y*lh/ch)|0), row=(y+cy0)*W+cx0;
+      for(let x=0;x<cw;x++){
+        if(gate && !gate[ly*lw+Math.min(lw-1,(x*lw/cw)|0)]) continue;
+        let v=(hi[y*cw+x]/255-0.35)/0.3;
+        if(v<=0) continue; if(v>1) v=1;
+        alpha[row+x]=(v*v*(3-2*v))*255+0.5;
+      }
+    }
+    $('busyText').textContent='Merapikan tepi…';
+    S.mask=mk(W,H); S.mctx=S.mask.getContext('2d');
+    restoreAlpha(erodeAlpha(alpha,W,H,Math.max(1,Math.round(Math.max(cw,ch)/1000))));
+    decontam(); composeCut();
+    S.hist=[]; S.redo=[];
+    S.zoom=1; S.offX=0; S.offY=0; $('zoom').value=100; $('zoomVal').textContent='100%';
+    say('Background terhapus. Pilih warna background, atau rapikan di tab Poles.','ok');
+  }catch(e){
+    pending=null;
+    if(e && e.message==='noperson') say('Orang tidak terdeteksi di foto ini. Coba foto lain yang wajahnya lebih jelas.','err');
+    else say('Gagal menghapus background. Pastikan internet aktif pada pemakaian pertama, lalu coba lagi.','err');
+  }finally{
+    setBusy(false); render();
+  }
+}
+
+/* ====== Mask, Undo, Redo ====== */
+function snapshot(){
+  const W=S.mask.width, H=S.mask.height;
+  const d=S.mctx.getImageData(0,0,W,H).data, a=new Uint8Array(W*H);
+  for(let i=0,j=3;i<a.length;i++,j+=4) a[i]=d[j];
+  return a;
+}
+function restoreAlpha(a){
+  const W=S.mask.width, H=S.mask.height;
+  const id=new ImageData(W,H), d=id.data;
+  for(let i=0,j=0;i<a.length;i++,j+=4){ d[j]=d[j+1]=d[j+2]=255; d[j+3]=a[i]; }
+  S.mctx.putImageData(id,0,0);
+  S.cutDirty=true;
+}
+function commit(snap){
+  S.hist.push(snap); if(S.hist.length>UNDO_MAX) S.hist.shift();
+  S.redo=[]; syncButtons();
+}
+function undo(){
+  if(!S.hist.length) return;
+  S.redo.push(snapshot()); restoreAlpha(S.hist.pop()); requestDraw();
+}
+function redo(){
+  if(!S.redo.length) return;
+  S.hist.push(snapshot()); restoreAlpha(S.redo.pop()); requestDraw();
+}
+
+/* ====== Alat Poles ====== */
+function brushR(){ return E.size[E.tool]/2/(E.fit*E.z); } // jari-jari dalam piksel foto
+function dab(x,y,r,erase){
+  const m=S.mctx;
+  const g=m.createRadialGradient(x,y,r*0.55,x,y,r);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  m.globalCompositeOperation=erase?'destination-out':'source-over';
+  m.fillStyle=g; m.beginPath(); m.arc(x,y,r,0,Math.PI*2); m.fill();
+  m.globalCompositeOperation='source-over';
+}
+const blurTmp=mk(2,2), btx=blurTmp.getContext('2d');
+function blurDab(x,y,r,b){
+  const pad=Math.ceil(b*2), x0=Math.floor(x-r-pad), y0=Math.floor(y-r-pad), sz=Math.ceil(2*(r+pad))+1;
+  if(blurTmp.width<sz||blurTmp.height<sz){ blurTmp.width=sz; blurTmp.height=sz; }
+  btx.clearRect(0,0,blurTmp.width,blurTmp.height);
+  btx.drawImage(S.mask,x0,y0,sz,sz,0,0,sz,sz);
+  const m=S.mctx;
+  m.save(); m.beginPath(); m.arc(x,y,r,0,Math.PI*2); m.clip();
+  m.clearRect(x0,y0,sz,sz);
+  m.filter='blur('+b.toFixed(2)+'px)';
+  m.drawImage(blurTmp,0,0,sz,sz,x0,y0,sz,sz);
+  m.restore();
+}
+function applyDab(p){
+  const r=brushR();
+  if(E.tool==='erase') dab(p.x,p.y,r,true);
+  else if(E.tool==='brush') dab(p.x,p.y,r,false);
+  else if(E.tool==='blur') blurDab(p.x,p.y,r,(0.3+E.sens.blur/100*4)/(E.fit*E.z));
+  S.cutDirty=true;
+}
+function magicAt(p){
+  const W=S.img.width, H=S.img.height;
+  const x=Math.round(p.x), y=Math.round(p.y);
+  if(x<0||y<0||x>=W||y>=H) return false;
+  if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
+  const d=S.imgData, s0=(y*W+x)*4, r0=d[s0], g0=d[s0+1], b0=d[s0+2];
+  const tol=Math.pow(E.sens.magic*2.2,2);
+  const seen=new Uint8Array(W*H), st=new Int32Array(W*H);
+  let sp=0, x0=x, y0=y, x1=x, y1=y;
+  const start=y*W+x; seen[start]=1; st[sp++]=start;
+  const test=j=>{
+    if(seen[j]) return;
+    const k=j*4, dr=d[k]-r0, dg=d[k+1]-g0, db=d[k+2]-b0;
+    if(dr*dr+dg*dg+db*db<=tol){ seen[j]=1; st[sp++]=j; } else seen[j]=2;
+  };
+  while(sp){
+    const i=st[--sp], px=i%W, py=(i/W)|0;
+    if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py;
+    if(px>0) test(i-1); if(px<W-1) test(i+1);
+    if(py>0) test(i-W); if(py<H-1) test(i+W);
+  }
+  const bw=x1-x0+1, bh=y1-y0+1, t=mk(bw,bh), tc=t.getContext('2d');
+  const id=tc.createImageData(bw,bh), o=id.data;
+  for(let yy=0;yy<bh;yy++) for(let xx=0;xx<bw;xx++){
+    if(seen[(yy+y0)*W+xx+x0]===1){ const k=(yy*bw+xx)*4; o[k]=o[k+1]=o[k+2]=255; o[k+3]=255; }
+  }
+  tc.putImageData(id,0,0);
+  const m=S.mctx;
+  m.save();
+  m.globalCompositeOperation=(E.mode==='erase')?'destination-out':'source-over';
+  m.filter='blur(1px)';
+  m.drawImage(t,x0,y0);
+  m.restore();
+  S.cutDirty=true;
+  return true;
+}
+
+/* ====== Lingkaran zoom ====== */
+const LOUPE=120, MAG=2.5;
+function drawLoupe(){
+  if(!E.cursor || S.tab!=='poles'){ loupe.hidden=true; return; }
+  loupe.hidden=false;
+  const sr=$('stage').getBoundingClientRect();
+  const sx=E.cursor.cx-sr.left, sy=E.cursor.cy-sr.top, zone=LOUPE+50;
+  if(sy<zone){
+    if(sx<zone) loupe.classList.add('right');
+    else if(sx>sr.width-zone) loupe.classList.remove('right');
+  }
+  const dpr=Math.min(window.devicePixelRatio||1,2), L=Math.round(LOUPE*dpr);
+  if(loupe.width!==L){ loupe.width=L; loupe.height=L; }
+  const vr=view.getBoundingClientRect(), vd=view.width/vr.width;
+  const fx=(E.cursor.cx-vr.left)*vd, fy=(E.cursor.cy-vr.top)*vd, src=LOUPE/MAG*vd;
+  lctx.fillStyle='#d9dce6'; lctx.fillRect(0,0,L,L);
+  lctx.imageSmoothingEnabled=true;
+  lctx.drawImage(view, fx-src/2, fy-src/2, src, src, 0, 0, L, L);
+  lctx.strokeStyle='rgba(0,0,0,.6)'; lctx.lineWidth=1.5*dpr;
+  lctx.beginPath(); lctx.moveTo(L/2-8*dpr,L/2); lctx.lineTo(L/2+8*dpr,L/2);
+  lctx.moveTo(L/2,L/2-8*dpr); lctx.lineTo(L/2,L/2+8*dpr); lctx.stroke();
+}
+
+/* ====== Goresan (1 jari) ====== */
+let stroke=null;
+function toImg(cx,cy){
+  const r=view.getBoundingClientRect(), k=E.fit*E.z;
+  return { x:(cx-r.left-E.cssW/2-E.px)/k + S.img.width/2,
+           y:(cy-r.top -E.cssH/2-E.py)/k + S.img.height/2 };
+}
+function beginStroke(cx,cy){
+  const p=toImg(cx,cy);
+  stroke={last:p, snap:snapshot()};
+  E.cursor={cx,cy};
+  if(E.tool!=='magic') applyDab(p);
+  requestDraw();
+}
+function moveStroke(cx,cy){
+  const p=toImg(cx,cy); E.cursor={cx,cy};
+  if(E.tool!=='magic'){
+    const r=brushR(), step=Math.max(0.5, r*(E.tool==='blur'?0.5:0.3));
+    const dx=p.x-stroke.last.x, dy=p.y-stroke.last.y, n=Math.ceil(Math.hypot(dx,dy)/step);
+    for(let i=1;i<=n;i++) applyDab({x:stroke.last.x+dx*i/n, y:stroke.last.y+dy*i/n});
+  }
+  stroke.last=p;
+  requestDraw();
+}
+function endStroke(){
+  const s=stroke; stroke=null; E.cursor=null;
+  if(E.tool==='magic'){ if(magicAt(s.last)) commit(s.snap); }
+  else commit(s.snap);
+  requestDraw();
+}
+function cancelStroke(){
+  if(!stroke) return;
+  restoreAlpha(stroke.snap); stroke=null; E.cursor=null; requestDraw();
+}
+
+/* ====== Warna ====== */
+function buildSwatches(){
+  const main=$('mainSw'); main.innerHTML='';
+  MAIN_COLORS.forEach(o=>{
+    const it=document.createElement('div'); it.className='it';
+    const b=document.createElement('button'); b.type='button'; b.title=o.n;
+    if(o.c) b.style.background=o.c; else b.classList.add('none');
+    b.dataset.c=o.c||'';
+    b.onclick=()=>setBg(o.c);
+    it.appendChild(b); const l=document.createElement('span'); l.textContent=o.n; it.appendChild(l);
+    main.appendChild(it);
+  });
+  const pal=$('paletteSw'); pal.innerHTML='';
+  PALETTE.forEach(c=>{
+    const b=document.createElement('button'); b.type='button'; b.style.background=c; b.dataset.c=c;
+    b.onclick=()=>setBg(c); pal.appendChild(b);
+  });
+  markSwatch();
+}
+function setBg(c){ S.bg=c; markSwatch(); render(); }
+function markSwatch(){
+  document.querySelectorAll('#mainSw button,#paletteSw button').forEach(b=>{
+    b.classList.toggle('on',(b.dataset.c||null)===(S.bg||null));
+  });
+}
+
+/* ====== Tab, rasio, zoom, alat ====== */
+function setTab(t){
+  S.tab=t; E.cursor=null; loupe.hidden=true;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  $('tab-utama').hidden=(t!=='utama'); $('tab-poles').hidden=(t!=='poles'); $('tab-lainnya').hidden=(t!=='lainnya');
+  view.classList.toggle('drag',t==='lainnya');
+  view.classList.toggle('paint',t==='poles');
+  render();
+}
+function setRatio(r){
+  S.ratio=r; S.offX=0; S.offY=0;
+  document.querySelectorAll('#ratioChips button').forEach(b=>b.classList.toggle('on',b.dataset.r===r));
+  render();
+}
+function setZoom(z){
+  S.zoom=clamp(z,0.5,3);
+  $('zoom').value=Math.round(S.zoom*100); $('zoomVal').textContent=Math.round(S.zoom*100)+'%';
+  render();
+}
+function setTool(t){
+  E.tool=t;
+  document.querySelectorAll('#tools button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('optMode').hidden = t!=='magic';
+  $('optSize').hidden = !(t in E.size);
+  $('optSens').hidden = !(t in E.sens);
+  if(t in E.size){ $('size').value=E.size[t]; $('sizeVal').textContent=E.size[t]; }
+  if(t in E.sens){ $('sens').value=E.sens[t]; $('sensVal').textContent=E.sens[t]; }
+  $('toolHint').textContent=HINTS[t]+' Dua jari untuk geser dan zoom.';
+  if(S.tab==='poles') render();
+}
+function setMode(m){
+  E.mode=m;
+  document.querySelectorAll('#optMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  if(S.tab==='poles') render();
+}
+
+/* ====== Sentuhan pada preview ====== */
+const pts=new Map(); let pinch0=null;
+const ptsArr=()=>[...pts.values()];
+const dist=()=>{ const a=ptsArr(); return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1; };
+const mid=()=>{ const a=ptsArr(); return {x:(a[0].x+a[1].x)/2, y:(a[0].y+a[1].y)/2}; };
+view.addEventListener('pointerdown',e=>{
+  if(!S.img||S.busy) return;
+  const t=S.tab;
+  if(t==='utama' || (t==='poles' && !S.mask)) return;
+  e.preventDefault();
+  try{ view.setPointerCapture(e.pointerId); }catch(_){}
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size===2){
+    if(t==='poles') cancelStroke();
+    const r=view.getBoundingClientRect(), m=mid();
+    pinch0={d:dist(), z:(t==='poles'?E.z:S.zoom),
+      ix:(m.x-r.left-E.cssW/2-E.px)/(E.fit*E.z), iy:(m.y-r.top-E.cssH/2-E.py)/(E.fit*E.z)};
+  }else if(pts.size===1 && t==='poles'){
+    beginStroke(e.clientX,e.clientY);
+  }
+});
+view.addEventListener('pointermove',e=>{
+  if(!pts.has(e.pointerId)) return;
+  const p=pts.get(e.pointerId), dx=e.clientX-p.x, dy=e.clientY-p.y;
+  p.x=e.clientX; p.y=e.clientY;
+  if(pts.size===2 && pinch0){
+    if(S.tab==='poles'){
+      const r=view.getBoundingClientRect(), m=mid();
+      E.z=clamp(pinch0.z*dist()/pinch0.d,1,8);
+      E.px=m.x-r.left-E.cssW/2-pinch0.ix*E.fit*E.z;
+      E.py=m.y-r.top -E.cssH/2-pinch0.iy*E.fit*E.z;
+      requestDraw();
+    }else setZoom(pinch0.z*dist()/pinch0.d);
+  }else if(pts.size===1){
+    if(S.tab==='lainnya'){ S.offX+=dx/view.clientWidth; S.offY+=dy/view.clientHeight; render(); }
+    else if(stroke) moveStroke(e.clientX,e.clientY);
+  }
+});
+function pointerEnd(e){
+  if(!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if(stroke && pts.size===0){ if(e.type==='pointercancel') cancelStroke(); else endStroke(); }
+  if(pts.size<2) pinch0=null;
+}
+view.addEventListener('pointerup',pointerEnd);
+view.addEventListener('pointercancel',pointerEnd);
+view.addEventListener('wheel',e=>{
+  if(!S.img) return;
+  const f=e.deltaY<0?1.1:1/1.1;
+  if(S.tab==='lainnya'){ e.preventDefault(); setZoom(S.zoom*f); }
+  else if(S.tab==='poles' && S.mask){ e.preventDefault(); E.z=clamp(E.z*f,1,8); requestDraw(); }
+},{passive:false});
+
+/* ====== Ekspor ====== */
+function exportCanvas(scale){
+  const {W,H}=frameDims();
+  const w=Math.max(1,Math.round(W*scale)), h=Math.max(1,Math.round(H*scale));
+  const c=mk(w,h);
+  const cx=c.getContext('2d'); cx.setTransform(w/W,0,0,h/H,0,0);
+  paint(cx,W,H,S.bg||(S.fmt==='jpg'?'#ffffff':null));
+  return c;
+}
+function toBlob(c,q){
+  return new Promise(res=>{
+    if(S.fmt==='jpg') c.toBlob(res,'image/jpeg',QUAL[q].jpg); else c.toBlob(res,'image/png');
+  });
+}
+function fmtSize(n){ return n>=1048576 ? (n/1048576).toFixed(1).replace('.',',')+' MB' : Math.max(1,Math.round(n/1024))+' KB'; }
+let estTimer=null, estToken=0;
+function scheduleEstimate(){
+  if($('exportPanel').hidden) return;
+  clearTimeout(estTimer); estTimer=setTimeout(estimate,450);
+}
+async function estimate(){
+  if(!S.img) return;
+  const tok=++estToken;
+  ['max','mid','low'].forEach(q=>$('qs-'+q).textContent='…');
+  let shared=null;
+  for(const q of ['max','mid','low']){
+    const scale = S.fmt==='png' ? QUAL[q].png : 1;
+    const c = (S.fmt==='jpg') ? (shared||(shared=exportCanvas(1))) : exportCanvas(scale);
+    const b = await toBlob(c,q);
+    if(tok!==estToken) return;
+    $('qs-'+q).textContent = b ? '≈ '+fmtSize(b.size) : '—';
+  }
+}
+function syncExportUI(){
+  document.querySelectorAll('#fmtSeg button').forEach(b=>b.classList.toggle('on',b.dataset.fmt===S.fmt));
+  document.querySelectorAll('#qList .qrow').forEach(r=>r.classList.toggle('on',r.dataset.q===S.q));
+  $('expNote').textContent = S.fmt==='png'
+    ? 'PNG: kualitas mengatur besar resolusi. Latar transparan tetap tersimpan.'
+    : 'JPG: kualitas mengatur kekompresan. Bila background transparan, otomatis berlatar putih.';
+}
+async function save(){
+  if(!S.img) return;
+  $('btnSave').disabled=true;
+  try{
+    const scale = S.fmt==='png' ? QUAL[S.q].png : 1;
+    const blob=await toBlob(exportCanvas(scale),S.q);
+    if(!blob) throw new Error('blob');
+    const d=new Date(), p=n=>String(n).padStart(2,'0');
+    const name='smartbg-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.'+S.fmt;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    say('Tersimpan: '+name+' ('+fmtSize(blob.size)+')','ok');
+    $('exportPanel').hidden=true;
+  }catch(e){ say('Gagal menyimpan foto. Coba lagi.','err'); }
+  finally{ $('btnSave').disabled=false; }
+}
+
+/* ====== Tombol & acara ====== */
+function syncButtons(){
+  $('btnRemove').disabled = !S.img || S.busy || !!S.mask;
+  $('btnPick').disabled = S.busy;
+  $('btnExport').disabled = !S.img || S.busy;
+  $('colorBox').classList.toggle('locked', !S.mask);
+  $('polesLock').hidden = !!S.mask;
+  $('polesBox').classList.toggle('locked', !S.mask);
+  $('btnUndo').disabled = !S.hist.length;
+  $('btnRedo').disabled = !S.redo.length;
+}
+
+$('btnPick').onclick=()=>{ $('file').value=''; $('file').click(); };
+$('file').onchange=e=>loadFile(e.target.files[0]);
+$('btnRemove').onclick=removeBg;
+$('customColor').oninput=e=>setBg(e.target.value);
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+document.querySelectorAll('#ratioChips button').forEach(b=>b.onclick=()=>setRatio(b.dataset.r));
+$('zoom').oninput=e=>setZoom(e.target.value/100);
+$('btnReset').onclick=()=>{ S.offX=0; S.offY=0; setZoom(1); };
+
+document.querySelectorAll('#tools button').forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+document.querySelectorAll('#optMode button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('size').oninput=e=>{ const v=+e.target.value; if(E.tool in E.size){ E.size[E.tool]=v; } $('sizeVal').textContent=v; };
+$('sens').oninput=e=>{ const v=+e.target.value; if(E.tool in E.sens){ E.sens[E.tool]=v; } $('sensVal').textContent=v; };
+$('btnUndo').onclick=undo;
+$('btnRedo').onclick=redo;
+
+/* Slider Tepi: relatif, geser lalu lepas; bisa diulang dan bisa di-Undo */
+let edgeBase=null, edgeT=0, edgeRaf=0;
+function edgeApply(){
+  edgeRaf=0; if(!edgeBase||!S.mask) return;
+  restoreAlpha(adjustAlpha(edgeBase,S.mask.width,S.mask.height,edgeT)); requestDraw();
+}
+$('edge').addEventListener('input',e=>{
+  if(!S.mask) return;
+  if(!edgeBase) edgeBase=snapshot();
+  edgeT=(e.target.value-50)/50;
+  if(!edgeRaf) edgeRaf=requestAnimationFrame(edgeApply);
+});
+$('edge').addEventListener('change',e=>{
+  if(!edgeBase) return;
+  if(edgeRaf){ cancelAnimationFrame(edgeRaf); edgeRaf=0; }
+  edgeApply();
+  commit(edgeBase); edgeBase=null;
+  e.target.value=50; edgeT=0;
+  decontam(); requestDraw();
+});
+
+$('btnExport').onclick=e=>{
+  e.stopPropagation();
+  const p=$('exportPanel'); p.hidden=!p.hidden;
+  if(!p.hidden){ syncExportUI(); estimate(); }
+};
+document.addEventListener('click',e=>{
+  const p=$('exportPanel');
+  if(!p.hidden && !p.contains(e.target) && e.target!==$('btnExport')) p.hidden=true;
+});
+document.querySelectorAll('#fmtSeg button').forEach(b=>b.onclick=()=>{ S.fmt=b.dataset.fmt; syncExportUI(); estimate(); });
+document.querySelectorAll('#qList .qrow').forEach(r=>r.onclick=()=>{ S.q=r.dataset.q; syncExportUI(); });
+$('btnSave').onclick=save;
+
+$('btnAbout').onclick=()=>$('about').showModal();
+$('aboutClose').onclick=()=>$('about').close();
+
+window.addEventListener('resize',()=>{ if(S.img) render(); });
+
+buildSwatches(); syncExportUI(); setTool('erase'); setTab('utama');
+})();
+</script>
 </body>
 </html>
