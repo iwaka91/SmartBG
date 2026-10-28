@@ -96,6 +96,12 @@ main{flex:1;width:100%;max-width:560px;margin:0 auto;padding:12px 14px 20px}
 .zoomrow span{width:48px;text-align:right;font-variant-numeric:tabular-nums;color:var(--mute);font-size:13px}
 .zoomrow span.lbl{width:auto;min-width:68px;text-align:left;color:var(--ink);font-weight:600}
 
+/* Tips & tambahan Poles */
+.tips{margin:0 0 12px;font-size:13px;color:var(--mute);background:#f3f4fb;border-radius:12px;padding:10px 12px}
+.tips summary{font-weight:700;color:var(--ink);cursor:pointer}
+.tips ul{margin:8px 0 0;padding-left:18px;line-height:1.55}
+.btn.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.sm{padding:9px 10px;font-size:13px}
 /* Poles */
 .toolgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 4px}
 .toolgrid button{padding:11px 4px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:700;font-size:13px;color:var(--ink)}
@@ -155,6 +161,16 @@ dialog .btn{margin-top:16px}
   </nav>
 
   <section class="panel" id="tab-utama">
+    <details class="tips" id="tips" open>
+      <summary>Tips foto agar hasil rapi</summary>
+      <ul>
+        <li>Latar polos dan rata (tembok atau kain satu warna).</li>
+        <li>Cahaya merata, tanpa bayangan tajam di belakang.</li>
+        <li>Orang berdiri agak jauh dari latar.</li>
+        <li>Hindari baju yang warnanya sama dengan latar.</li>
+        <li>Foto tegak dengan wajah dan bahu terlihat jelas.</li>
+      </ul>
+    </details>
     <input type="file" id="file" accept="image/*" hidden>
     <div class="row">
       <button class="btn" id="btnPick">Pilih Foto</button>
@@ -177,6 +193,7 @@ dialog .btn{margin-top:16px}
       <div class="row">
         <button class="btn" id="btnUndo">↶ Undo</button>
         <button class="btn" id="btnRedo">↷ Redo</button>
+        <button class="btn on" id="btnCheck">Cek Tepi</button>
       </div>
       <div class="toolgrid" id="tools">
         <button data-t="erase" class="on">Penghapus</button>
@@ -206,6 +223,24 @@ dialog .btn{margin-top:16px}
         <span class="lbl" style="min-width:0;text-align:right">Halus</span>
       </div>
       <p class="note" style="margin-top:6px">Geser lalu lepas. Bisa diulang beberapa kali.</p>
+
+      <h3 style="margin-top:16px">Bersihkan sisa latar lama</h3>
+      <button class="btn block" id="btnClean">Bersihkan Sisa Latar</button>
+      <div class="zoomrow">
+        <span class="lbl">Kepekaan</span>
+        <input type="range" id="cleanSens" min="1" max="100" value="40">
+        <span id="cleanVal">40</span>
+      </div>
+      <p class="note" style="margin-top:6px">Membuang sisa warna latar lama di tepi dan di sela tubuh. Paling cocok untuk latar polos. Bila baju sewarna latar, kecilkan kepekaan.</p>
+
+      <h3 style="margin-top:16px">Presisi Tepi</h3>
+      <div class="seg" id="precSeg" style="margin-bottom:6px">
+        <button data-p="sedang" class="on">Sedang</button>
+        <button data-p="tinggi">Tinggi</button>
+        <button data-p="maksimal">Maksimal</button>
+      </div>
+      <p class="note" style="margin-top:6px">Tinggi dan Maksimal lebih tajam di rambut dan kerudung, tetapi lebih lama dan butuh memori besar. Memilihnya mengulang penghapusan dari awal (bisa di-Undo).</p>
+      <p class="msg" id="msg2"></p>
     </div>
   </section>
 
@@ -232,7 +267,7 @@ dialog .btn{margin-top:16px}
 <dialog id="about">
   <h2>SmartBG</h2>
   <p>Penghapus latar belakang pas foto</p>
-  <p>Versi 2.2</p>
+  <p>Versi 2.3</p>
   <p class="who">Toto Gutomo, S.Pd., Gr., M.Pd., CPSS</p>
   <p class="sch">Guru SMA Negeri 3 Maliku</p>
   <p>totogutomo.com</p>
@@ -275,7 +310,7 @@ const S = {
 };
 const E = { // status tab Poles
   z:1, px:0, py:0, fit:1, cssW:1, cssH:1,
-  tool:'erase', mode:'restore',
+  tool:'erase', mode:'restore', check:true, prec:'sedang',
   size:{erase:24, brush:24, blur:30}, sens:{magic:30, blur:40},
   cursor:null
 };
@@ -298,7 +333,9 @@ function source(){
   if(S.mask){ if(S.cutDirty||!S.cut) composeCut(); return S.cut; }
   return S.img;
 }
-function say(t, cls){ const m=$('msg'); m.textContent=t||''; m.className='msg'+(cls?' '+cls:''); }
+function say(t, cls){
+  ['msg','msg2'].forEach(id=>{ const m=$(id); m.textContent=t||''; m.className='msg'+(cls?' '+cls:''); });
+}
 function setBusy(on, text){ S.busy=on; $('busy').hidden=!on; if(text) $('busyText').textContent=text; syncButtons(); }
 
 /* ====== Menggambar ====== */
@@ -357,7 +394,8 @@ function renderEdit(){
   const tx=(E.cssW/2+E.px)*dpr - W/2*s, ty=(E.cssH/2+E.py)*dpr - H/2*s;
   const cut=source();
   vctx.setTransform(1,0,0,1,0,0); vctx.clearRect(0,0,f.pw,f.ph);
-  if(S.bg){ vctx.fillStyle=S.bg; vctx.fillRect(0,0,f.pw,f.ph); }
+  const bgc=E.check?'#00e060':S.bg;
+  if(bgc){ vctx.fillStyle=bgc; vctx.fillRect(0,0,f.pw,f.ph); }
   vctx.setTransform(s,0,0,s,tx,ty);
   vctx.imageSmoothingEnabled=true; vctx.imageSmoothingQuality='high';
   if(E.tool==='brush' || (E.tool==='magic' && E.mode==='restore')){
@@ -373,7 +411,7 @@ function renderEdit(){
     vctx.lineWidth=3*dpr; vctx.strokeStyle='rgba(0,0,0,.55)'; vctx.stroke();
     vctx.lineWidth=1.5*dpr; vctx.strokeStyle='#fff'; vctx.stroke();
   }
-  $('badge').textContent='Mode Poles';
+  $('badge').textContent=E.check?'Cek Tepi':'Mode Poles';
 }
 function render(){
   const has=!!S.img;
@@ -413,6 +451,7 @@ async function loadFile(file){
     S.hist=[]; S.redo=[];
     S.zoom=1; S.offX=0; S.offY=0; E.z=1; E.px=0; E.py=0;
     $('zoom').value=100; $('zoomVal').textContent='100%';
+    $('tips').open=false;
     say('Foto sudah dipilih. Periksa preview, lalu ketuk "Hapus Background".');
     buildSwatches();
   }catch(e){
@@ -560,10 +599,10 @@ function boxMean(src,w,h,r){
 function guidedColor(I0,I1,I2,p,w,h,r,eps){
   const n=w*h, bx=a=>boxMean(a,w,h,r);
   const mul=(a,b)=>{ const o=new Float32Array(n); for(let i=0;i<n;i++) o[i]=a[i]*b[i]; return o; };
-  const m0=bx(I0), m1=bx(I1), m2=bx(I2), mp=bx(p);
-  const c0=bx(mul(I0,p)), c1=bx(mul(I1,p)), c2=bx(mul(I2,p));
-  const v00=bx(mul(I0,I0)), v01=bx(mul(I0,I1)), v02=bx(mul(I0,I2));
-  const v11=bx(mul(I1,I1)), v12=bx(mul(I1,I2)), v22=bx(mul(I2,I2));
+  let m0=bx(I0), m1=bx(I1), m2=bx(I2), mp=bx(p);
+  let c0=bx(mul(I0,p)), c1=bx(mul(I1,p)), c2=bx(mul(I2,p));
+  let v00=bx(mul(I0,I0)), v01=bx(mul(I0,I1)), v02=bx(mul(I0,I2));
+  let v11=bx(mul(I1,I1)), v12=bx(mul(I1,I2)), v22=bx(mul(I2,I2));
   const a0=new Float32Array(n), a1=new Float32Array(n), a2=new Float32Array(n), b=new Float32Array(n);
   for(let i=0;i<n;i++){
     const k0=c0[i]-m0[i]*mp[i], k1=c1[i]-m1[i]*mp[i], k2=c2[i]-m2[i]*mp[i];
@@ -575,6 +614,7 @@ function guidedColor(I0,I1,I2,p,w,h,r,eps){
     const x0=(i00*k0+i01*k1+i02*k2)/det, x1=(i01*k0+i11*k1+i12*k2)/det, x2=(i02*k0+i12*k1+i22*k2)/det;
     a0[i]=x0; a1[i]=x1; a2[i]=x2; b[i]=mp[i]-x0*m0[i]-x1*m1[i]-x2*m2[i];
   }
+  m0=m1=m2=mp=c0=c1=c2=v00=v01=v02=v11=v12=v22=null; // lepas memori sebelum tahap akhir
   const ma0=bx(a0), ma1=bx(a1), ma2=bx(a2), mb=bx(b), q=new Uint8Array(n);
   for(let i=0;i<n;i++){
     const v=ma0[i]*I0[i]+ma1[i]*I1[i]+ma2[i]*I2[i]+mb[i];
@@ -672,8 +712,81 @@ function adjustAlpha(base,W,H,t){
   return out;
 }
 
-async function removeBg(){
+/* ====== Bersihkan sisa latar lama ====== */
+const PREC = { sedang:900, tinggi:1300, maksimal:1700 }; // ukuran kerja penyaring tepi (px)
+// Cari warna latar lama dari bagian yang sudah terhapus (warna paling dominan)
+function estimateOldBg(al,px,n){
+  const cnt=new Int32Array(32768), sr=new Float64Array(32768), sg=new Float64Array(32768), sb=new Float64Array(32768);
+  const step=Math.max(1,Math.floor(n/80000)); let total=0;
+  for(let i=0;i<n;i+=step){
+    if(al[i]) continue;
+    const o=i*4, r=px[o], g=px[o+1], b=px[o+2], k=((r>>3)<<10)|((g>>3)<<5)|(b>>3);
+    cnt[k]++; sr[k]+=r; sg[k]+=g; sb[k]+=b; total++;
+  }
+  if(total<200) return null;
+  const sumAround=(k,wantMean)=>{
+    const r0=k>>10, g0=(k>>5)&31, b0=k&31; let c=0,r=0,g=0,b=0;
+    for(let dr=-1;dr<=1;dr++){ const rr=r0+dr; if(rr<0||rr>31) continue;
+      for(let dg=-1;dg<=1;dg++){ const gg=g0+dg; if(gg<0||gg>31) continue;
+        for(let db=-1;db<=1;db++){ const bb=b0+db; if(bb<0||bb>31) continue;
+          const j=(rr<<10)|(gg<<5)|bb; c+=cnt[j]; if(wantMean){ r+=sr[j]; g+=sg[j]; b+=sb[j]; } } } }
+    return {c,r,g,b};
+  };
+  let best=0, bk=-1;
+  for(let k=0;k<32768;k++){ if(!cnt[k]) continue; const s=sumAround(k,false).c; if(s>best){ best=s; bk=k; } }
+  if(bk<0) return null;
+  const m=sumAround(bk,true);
+  return { r:m.r/m.c, g:m.g/m.c, b:m.b/m.c, cov:m.c/total };
+}
+async function cleanResidue(){
+  if(!S.mask||S.busy) return;
+  setBusy(true,'Membersihkan sisa latar…');
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    const W=S.img.width, H=S.img.height, n=W*H;
+    if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
+    const px=S.imgData, al=snapshot(), before=al.slice();
+    const bg=estimateOldBg(al,px,n);
+    if(!bg||bg.cov<0.25){ say('Latar lama kurang seragam. Fitur ini paling cocok untuk foto berlatar polos.','err'); return; }
+    const sens=+$('cleanSens').value, tol=12+sens*0.9, tol2=tol*tol;
+    const D=Math.max(4,Math.round(Math.max(W,H)*(0.005+0.0004*sens)));
+    const vis=new Uint8Array(n), dep=new Uint8Array(n), q=new Int32Array(n);
+    let qh=0, qt=0;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      const i=y*W+x; if(al[i]) continue;
+      if((x>0&&al[i-1])||(x<W-1&&al[i+1])||(y>0&&al[i-W])||(y<H-1&&al[i+W])){ q[qt++]=i; vis[i]=1; }
+    }
+    const cleared=[];
+    while(qh<qt){
+      const i=q[qh++], d=dep[i]; if(d>=D) continue;
+      const x=i%W, y=(i/W)|0, nb=[];
+      if(x>0) nb.push(i-1); if(x<W-1) nb.push(i+1); if(y>0) nb.push(i-W); if(y<H-1) nb.push(i+W);
+      for(const j of nb){
+        if(vis[j]||al[j]===0) continue;
+        vis[j]=1;
+        const o=j*4, dr=px[o]-bg.r, dg=px[o+1]-bg.g, db=px[o+2]-bg.b;
+        if(dr*dr+dg*dg+db*db<=tol2){ al[j]=0; dep[j]=d+1; q[qt++]=j; cleared.push(j); }
+      }
+    }
+    if(cleared.length<20){ say('Tidak ditemukan sisa latar lama.','ok'); return; }
+    // haluskan sedikit sekeliling bagian yang dibersihkan
+    const bl=boxBlur(al,W,H,1), soft=new Uint8Array(n);
+    for(const c of cleared){
+      const x=c%W, y=(c/W)|0;
+      for(let dy=-1;dy<=1;dy++){ const yy=y+dy; if(yy<0||yy>=H) continue;
+        for(let dx=-1;dx<=1;dx++){ const xx=x+dx; if(xx<0||xx>=W) continue; soft[yy*W+xx]=1; } }
+    }
+    for(let i=0;i<n;i++) if(soft[i]&&al[i]&&bl[i]<al[i]) al[i]=bl[i];
+    commit(before); restoreAlpha(al); decontam();
+    say('Sisa latar dibersihkan ('+cleared.length+' titik). Bila ada bagian baju yang ikut hilang, tekan Undo.','ok');
+  }catch(e){ say('Gagal membersihkan sisa latar. Coba lagi.','err'); }
+  finally{ setBusy(false); requestDraw(); }
+}
+
+async function removeBg(level){
+  level=PREC[level]?level:E.prec;
   if(!S.img||S.busy) return;
+  const prev=S.mask?snapshot():null;
   try{
     setBusy(true,'Memuat model penghapus background…');
     const seg=await getSegmenter();
@@ -700,8 +813,14 @@ async function removeBg(){
     const lw=Math.max(1,Math.round(cw*lk)), lh=Math.max(1,Math.round(ch*lk));
     const c2=largest(readMask(m2,lw,lh),lw,lh,128);
     const gate=c2?dilate(c2.keep,lw,lh,2):null;
-    const g=scaledCrop(S.img,cx0,cy0,cw,ch,900);
-    const hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch);
+    $('busyText').textContent='Merapikan tepi…';
+    let g=scaledCrop(S.img,cx0,cy0,cw,ch,PREC[level]), hi, fallback=false;
+    try{ hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch); }
+    catch(err){
+      if(level==='sedang') throw err;
+      fallback=true; g=scaledCrop(S.img,cx0,cy0,cw,ch,PREC.sedang);
+      hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch);
+    }
 
     // Langkah 3: haluskan tepi, susun mask utuh
     const alpha=new Uint8Array(W*H);
@@ -718,9 +837,12 @@ async function removeBg(){
     S.mask=mk(W,H); S.mctx=S.mask.getContext('2d');
     restoreAlpha(erodeAlpha(alpha,W,H,Math.max(1,Math.round(Math.max(cw,ch)/1000))));
     decontam(); composeCut();
-    S.hist=[]; S.redo=[];
+    if(prev) commit(prev); else { S.hist=[]; S.redo=[]; }
     S.zoom=1; S.offX=0; S.offY=0; $('zoom').value=100; $('zoomVal').textContent='100%';
-    say('Background terhapus. Pilih warna background, atau rapikan di tab Poles.','ok');
+    if(fallback){
+      E.prec='sedang'; syncPrec();
+      say('Memori perangkat tidak cukup untuk presisi '+level+'. Dipakai presisi Sedang.','err');
+    }else say('Background terhapus. Pilih warna background, atau rapikan di tab Poles.','ok');
   }catch(e){
     pending=null;
     if(e && e.message==='noperson') say('Orang tidak terdeteksi di foto ini. Coba foto lain yang wajahnya lebih jelas.','err');
@@ -1069,7 +1191,7 @@ function syncButtons(){
 
 $('btnPick').onclick=()=>{ $('file').value=''; $('file').click(); };
 $('file').onchange=e=>loadFile(e.target.files[0]);
-$('btnRemove').onclick=removeBg;
+$('btnRemove').onclick=()=>removeBg();
 $('customColor').oninput=e=>setBg(e.target.value);
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 document.querySelectorAll('#ratioChips button').forEach(b=>b.onclick=()=>setRatio(b.dataset.r));
@@ -1102,6 +1224,23 @@ $('edge').addEventListener('change',e=>{
   commit(edgeBase); edgeBase=null;
   e.target.value=50; edgeT=0;
   decontam(); requestDraw();
+});
+
+/* Cek Tepi, Bersihkan Sisa Latar, Presisi Tepi */
+$('btnCheck').onclick=()=>{
+  E.check=!E.check; $('btnCheck').classList.toggle('on',E.check);
+  if(S.tab==='poles') render();
+};
+$('btnClean').onclick=()=>cleanResidue();
+$('cleanSens').oninput=e=>{ $('cleanVal').textContent=e.target.value; };
+function syncPrec(){
+  document.querySelectorAll('#precSeg button').forEach(b=>b.classList.toggle('on',b.dataset.p===E.prec));
+}
+document.querySelectorAll('#precSeg button').forEach(b=>b.onclick=async()=>{
+  const p=b.dataset.p;
+  if(p===E.prec||S.busy||!S.mask) return;
+  E.prec=p; syncPrec();
+  await removeBg(p);
 });
 
 $('btnExport').onclick=e=>{

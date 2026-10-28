@@ -14,14 +14,22 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Tab Lainnya: rasio Asli, 1x1, 3x4, 4x6 dengan geser dan zoom
 - Ekspor JPG/PNG dengan pilihan kualitas dan estimasi ukuran
 - `lib/` berisi MediaPipe lokal, jadi bisa dipakai tanpa internet
+- v2.3: tombol **Bersihkan Sisa Latar** (mengenali warna latar lama lalu membuang sisa di tepi dan sela tubuh, ada slider kepekaan, bisa di-Undo)
+- v2.3: mode **Cek Tepi** di tab Poles (latar sementara hijau agar residu terlihat)
+- v2.3: **Presisi Tepi** Sedang/Tinggi/Maksimal di tab Poles (mengulang penghapusan dengan penyaring tepi lebih besar; turun otomatis ke Sedang bila memori tidak cukup)
+- v2.3: panel **Tips foto** di tab Utama
 
 ### Hasil uji (28 Okt 2026, MediaPipe asli, peramban headless)
 - Foto pas foto berlatar polos: tepi bersih, tidak ada garis kuning sisa latar
-- Masih ada: sedikit sisa latar di pojok bawah yang menyentuh tepi gambar (bisa dihapus dengan Ajaib mode Hapus); telinga dan bahu pada foto selfie dekat kadang terpotong
+- Sisa kuning di pojok bawah (sela bahu dan tepi gambar) hilang setelah Bersihkan Sisa Latar; syal putih tidak ikut terhapus
+- Presisi Maksimal hanya sedikit lebih tajam pada rambut di foto uji; Sedang sudah cukup baik. Waktu proses sekitar 2-3 detik di komputer uji
+- Foto berlatar kabut: Bersihkan Sisa Latar berjalan tanpa merusak masker, tetapi hasilnya hanya sedikit; bahu kiri masih agak kabur
+- Masih ada: telinga dan bahu pada foto selfie dekat kadang terpotong
 - Foto seluruh badan atau orang kecil di dalam bingkai: tepi masih kasar. Aplikasi ditujukan untuk pas foto
 - Belum diuji di perangkat Android dan setelah dibungkus APK
 
 ### Belum dikerjakan
+- Model lanjutan (lebih tajam) sebagai pilihan di beranda; default tetap MediaPipe (masih didiskusikan)
 - Fitur jas dan dasi (butuh aset PNG transparan berlisensi atau buatan sendiri)
 - Pembungkusan APK
 

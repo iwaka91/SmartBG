@@ -9,7 +9,7 @@ Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih
 - Hapus background dengan MediaPipe Selfie Segmentation, diproses di perangkat
 - Tepi dirapikan mengikuti foto asli, warna sisa latar lama dibuang
 - Warna latar: putih, merah, biru, palet, dan warna bebas
-- Tab **Poles**: Penghapus, Kuas, Ajaib, Blur, Undo/Redo, slider Tepi, lingkaran zoom
+- Tab **Poles**: Penghapus, Kuas, Ajaib, Blur, Undo/Redo, slider Tepi, lingkaran zoom, Cek Tepi, Bersihkan Sisa Latar, Presisi Tepi (Sedang/Tinggi/Maksimal)
 - Tab **Lainnya**: rasio foto 1x1, 3x4, 4x6 dengan geser dan zoom
 - Ekspor JPG atau PNG, kualitas maksimal/sedang/rendah dengan estimasi ukuran
 
