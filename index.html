@@ -110,13 +110,34 @@ main{flex:1;width:100%;max-width:560px;margin:0 auto;padding:12px 14px 20px}
 
 footer{padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;color:var(--mute);font-size:13px}
 
-dialog{border:0;border-radius:18px;padding:22px;max-width:340px;width:calc(100vw - 40px);text-align:center;box-shadow:0 20px 50px rgba(20,24,50,.3)}
+dialog{border:0;border-radius:18px;padding:22px;max-width:380px;width:calc(100vw - 40px);max-height:calc(100dvh - 40px);overflow:auto;text-align:left;box-shadow:0 20px 50px rgba(20,24,50,.3)}
 dialog::backdrop{background:rgba(20,24,50,.45)}
-dialog h2{margin:0 0 4px;color:var(--pri)}
-dialog p{margin:4px 0;color:var(--mute);font-size:14px}
-dialog .who{color:var(--ink);font-weight:700;font-size:15px;margin-top:14px}
+dialog h2{margin:0 0 4px;color:var(--pri);text-align:center}
+dialog p{margin:4px 0;color:var(--mute);font-size:14px;line-height:1.5}
+dialog .ver{text-align:center;font-size:13px}
+dialog h4{margin:16px 0 2px;font-size:13px;color:var(--ink)}
+dialog .who{color:var(--ink);font-weight:700;font-size:15px;margin-top:4px}
 dialog .sch{color:var(--ink);font-size:14px}
-dialog .btn{margin-top:16px}
+dialog a{color:var(--pri);font-weight:600;text-decoration:none;word-break:break-all}
+dialog a:active{text-decoration:underline}
+dialog .coffee{display:inline-flex;align-items:center;gap:6px}
+dialog .coffee svg{width:18px;height:18px;flex:none}
+dialog .btn{margin-top:18px;width:100%}
+
+/* Pilihan cara hapus background */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.mode{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px;text-align:left;color:var(--ink)}
+.mode b{display:block;font-size:14px}
+.mode span{display:block;font-size:12px;color:var(--mute);margin-top:2px;line-height:1.35}
+.mode.on{border-color:var(--pri);background:#eef0ff;box-shadow:0 0 0 1px var(--pri)}
+
+/* Nama berkas */
+.fname{display:flex;align-items:baseline;gap:2px;border-bottom:1px dashed var(--mute);margin:0 0 12px;padding-bottom:2px}
+.fname input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-weight:600;color:var(--ink);padding:4px 0;outline:0}
+.fname input:focus{color:var(--pri)}
+.fname span{color:var(--mute);font-weight:600}
+.expbtns{display:flex;gap:8px}
+.expbtns .btn{flex:1}
 </style>
 </head>
 <body>
@@ -141,8 +162,13 @@ dialog .btn{margin-top:16px}
     <div class="qrow" data-q="mid"><span class="qn">Sedang</span><span class="qs" id="qs-mid">…</span></div>
     <div class="qrow" data-q="low"><span class="qn">Rendah</span><span class="qs" id="qs-low">…</span></div>
   </div>
+  <h4>Nama berkas (ketuk untuk mengubah)</h4>
+  <div class="fname"><input type="text" id="fname" maxlength="60" value="pasfoto-smartbg" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Nama berkas"><span id="fext">.jpg</span></div>
   <p class="note" id="expNote"></p>
-  <button class="btn primary block" id="btnSave">Simpan</button>
+  <div class="expbtns">
+    <button class="btn primary" id="btnSave">Simpan</button>
+    <button class="btn" id="btnShare" hidden>Bagikan</button>
+  </div>
 </div>
 
 <main>
@@ -172,6 +198,10 @@ dialog .btn{margin-top:16px}
       </ul>
     </details>
     <input type="file" id="file" accept="image/*" hidden>
+    <div class="modes" id="modes">
+      <button class="mode on" data-pm="std"><b>Standar</b><span>Cepat dan cukup untuk kebanyakan foto</span></button>
+      <button class="mode" data-pm="adv"><b>Pembersihan Tingkat Lanjut</b><span>Tepi lebih detail dan tajam, proses sedikit lebih lama</span></button>
+    </div>
     <div class="row">
       <button class="btn" id="btnPick">Pilih Foto</button>
       <button class="btn primary" id="btnRemove" disabled>Hapus Background</button>
@@ -266,11 +296,31 @@ dialog .btn{margin-top:16px}
 
 <dialog id="about">
   <h2>SmartBG</h2>
-  <p>Penghapus latar belakang pas foto</p>
-  <p>Versi 2.3</p>
+  <p class="ver">Versi 2.4</p>
+
+  <h4>Deskripsi singkat</h4>
+  <p>Aplikasi penghapus latar belakang pas foto. Pilih warna latar (putih, merah, biru, dan lainnya), rapikan tepi, ubah rasio, lalu simpan atau bagikan.</p>
+
+  <h4>Privasi</h4>
+  <p>Foto diproses langsung di perangkat dan tidak diunggah ke server mana pun. Aplikasi tidak meminta akun dan tidak mengumpulkan data pribadi.</p>
+
+  <h4>Teknologi yang digunakan</h4>
+  <p>MediaPipe Selfie Segmentation (Google) untuk mengenali orang di foto, serta penyaring tepi dan pembersih sisa latar yang berjalan di perangkat.</p>
+
+  <h4>Lisensi</h4>
+  <p>MediaPipe berlisensi Apache License 2.0, hak cipta Google. SmartBG gratis digunakan.</p>
+
+  <h4>Pengembang</h4>
   <p class="who">Toto Gutomo, S.Pd., Gr., M.Pd., CPSS</p>
   <p class="sch">Guru SMA Negeri 3 Maliku</p>
-  <p>totogutomo.com</p>
+  <p><a href="https://totogutomo.com" target="_blank" rel="noopener">totogutomo.com</a></p>
+
+  <h4>Suka dengan aplikasi? Traktir pengembang suka-suka</h4>
+  <p><a class="coffee" href="https://saweria.co/totogutomo" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v6a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8z"/><path d="M7 2v3M11 2v3M15 2v3"/></svg>saweria.co/totogutomo</a></p>
+
+  <h4>Hubungi pengembang</h4>
+  <p><a href="mailto:totogutomo92@gmail.com">totogutomo92@gmail.com</a></p>
+
   <button class="btn primary" id="aboutClose">Tutup</button>
 </dialog>
 
@@ -306,7 +356,7 @@ const S = {
   img:null, imgData:null, fg:null, mask:null, mctx:null, cut:null, cutDirty:false, bg:null,
   hist:[], redo:[],
   ratio:'asli', zoom:1, offX:0, offY:0,
-  fmt:'jpg', q:'max', tab:'utama', busy:false
+  fmt:'jpg', q:'max', tab:'utama', busy:false, proc:'std', fname:'pasfoto-smartbg'
 };
 const E = { // status tab Poles
   z:1, px:0, py:0, fit:1, cssW:1, cssH:1,
@@ -632,13 +682,22 @@ function upR(a,w,h,W,H){
   for(let i=0,j=0;i<out.length;i++,j+=4) out[i]=e[j];
   return out;
 }
-function refineMask(g,p8,cw,ch){
+function refineMask(g,p8,cw,ch,fine){
   const gw=g.width, gh=g.height, n=gw*gh;
   const d=g.getContext('2d',{willReadFrequently:true}).getImageData(0,0,gw,gh).data;
   const I0=new Float32Array(n), I1=new Float32Array(n), I2=new Float32Array(n), p=new Float32Array(n);
   for(let i=0,j=0;i<n;i++,j+=4){ I0[i]=d[j]/255; I1[i]=d[j+1]/255; I2[i]=d[j+2]/255; p[i]=p8[i]/255; }
-  const r=Math.max(3,Math.round(Math.max(gw,gh)/120));
-  return upR(guidedColor(I0,I1,I2,p,gw,gh,r,4e-4),gw,gh,cw,ch);
+  if(!fine){
+    const r=Math.max(3,Math.round(Math.max(gw,gh)/120));
+    return upR(guidedColor(I0,I1,I2,p,gw,gh,r,4e-4),gw,gh,cw,ch);
+  }
+  // Tingkat Lanjut: dua tahap. Tahap 1 menyesuaikan tepi ke foto, tahap 2 (jendela lebih kecil)
+  // mempertajam lagi mengikuti garis halus seperti rambut.
+  const r1=Math.max(3,Math.round(Math.max(gw,gh)/150));
+  const q1=guidedColor(I0,I1,I2,p,gw,gh,r1,3e-4);
+  for(let i=0;i<n;i++) p[i]=q1[i]/255;
+  const r2=Math.max(2,Math.round(r1/2));
+  return upR(guidedColor(I0,I1,I2,p,gw,gh,r2,1.5e-4),gw,gh,cw,ch);
 }
 function erodeAlpha(a,w,h,n){
   for(let t=0;t<n;t++){
@@ -738,16 +797,20 @@ function estimateOldBg(al,px,n){
   const m=sumAround(bk,true);
   return { r:m.r/m.c, g:m.g/m.c, b:m.b/m.c, cov:m.c/total };
 }
-async function cleanResidue(){
-  if(!S.mask||S.busy) return;
-  setBusy(true,'Membersihkan sisa latar…');
-  await new Promise(r=>setTimeout(r,30));
+// auto=true: dipanggil otomatis oleh Tingkat Lanjut (tanpa pesan, tanpa Undo sendiri)
+async function cleanResidue(auto){
+  if(!S.mask||(S.busy&&!auto)) return;
+  const sayq=auto?()=>{}:say;
+  if(!auto){
+    setBusy(true,'Membersihkan sisa latar…');
+    await new Promise(r=>setTimeout(r,30));
+  }
   try{
     const W=S.img.width, H=S.img.height, n=W*H;
     if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
     const px=S.imgData, al=snapshot(), before=al.slice();
     const bg=estimateOldBg(al,px,n);
-    if(!bg||bg.cov<0.25){ say('Latar lama kurang seragam. Fitur ini paling cocok untuk foto berlatar polos.','err'); return; }
+    if(!bg||bg.cov<0.25){ sayq('Latar lama kurang seragam. Fitur ini paling cocok untuk foto berlatar polos.','err'); return; }
     const sens=+$('cleanSens').value, tol=12+sens*0.9, tol2=tol*tol;
     const D=Math.max(4,Math.round(Math.max(W,H)*(0.005+0.0004*sens)));
     const vis=new Uint8Array(n), dep=new Uint8Array(n), q=new Int32Array(n);
@@ -768,7 +831,7 @@ async function cleanResidue(){
         if(dr*dr+dg*dg+db*db<=tol2){ al[j]=0; dep[j]=d+1; q[qt++]=j; cleared.push(j); }
       }
     }
-    if(cleared.length<20){ say('Tidak ditemukan sisa latar lama.','ok'); return; }
+    if(cleared.length<20){ sayq('Tidak ditemukan sisa latar lama.','ok'); return; }
     // haluskan sedikit sekeliling bagian yang dibersihkan
     const bl=boxBlur(al,W,H,1), soft=new Uint8Array(n);
     for(const c of cleared){
@@ -777,15 +840,18 @@ async function cleanResidue(){
         for(let dx=-1;dx<=1;dx++){ const xx=x+dx; if(xx<0||xx>=W) continue; soft[yy*W+xx]=1; } }
     }
     for(let i=0;i<n;i++) if(soft[i]&&al[i]&&bl[i]<al[i]) al[i]=bl[i];
-    commit(before); restoreAlpha(al); decontam();
-    say('Sisa latar dibersihkan ('+cleared.length+' titik). Bila ada bagian baju yang ikut hilang, tekan Undo.','ok');
-  }catch(e){ say('Gagal membersihkan sisa latar. Coba lagi.','err'); }
-  finally{ setBusy(false); requestDraw(); }
+    if(!auto) commit(before);
+    restoreAlpha(al); decontam();
+    sayq('Sisa latar dibersihkan ('+cleared.length+' titik). Bila ada bagian baju yang ikut hilang, tekan Undo.','ok');
+  }catch(e){ sayq('Gagal membersihkan sisa latar. Coba lagi.','err'); }
+  finally{ if(!auto){ setBusy(false); requestDraw(); } }
 }
 
 async function removeBg(level){
   level=PREC[level]?level:E.prec;
   if(!S.img||S.busy) return;
+  const adv=S.proc==='adv';
+  if(adv&&level==='sedang') level='tinggi'; // Tingkat Lanjut minimal presisi Tinggi
   const prev=S.mask?snapshot():null;
   try{
     setBusy(true,'Memuat model penghapus background…');
@@ -815,28 +881,34 @@ async function removeBg(level){
     const gate=c2?dilate(c2.keep,lw,lh,2):null;
     $('busyText').textContent='Merapikan tepi…';
     let g=scaledCrop(S.img,cx0,cy0,cw,ch,PREC[level]), hi, fallback=false;
-    try{ hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch); }
+    try{ hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch,adv); }
     catch(err){
       if(level==='sedang') throw err;
       fallback=true; g=scaledCrop(S.img,cx0,cy0,cw,ch,PREC.sedang);
-      hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch);
+      hi=refineMask(g,readMask(m2,g.width,g.height),cw,ch,adv);
     }
+    g=null;
 
     // Langkah 3: haluskan tepi, susun mask utuh
     const alpha=new Uint8Array(W*H);
+    // Tingkat Lanjut: peralihan tepi lebih sempit (lebih tajam)
+    const lo=adv?0.42:0.35, wd=adv?0.18:0.3;
+    const curve=h=>{ let v=(h/255-lo)/wd; if(v<=0) return 0; if(v>1) v=1; return (v*v*(3-2*v))*255+0.5; };
     for(let y=0;y<ch;y++){
       const ly=Math.min(lh-1,(y*lh/ch)|0), row=(y+cy0)*W+cx0;
       for(let x=0;x<cw;x++){
         if(gate && !gate[ly*lw+Math.min(lw-1,(x*lw/cw)|0)]) continue;
-        let v=(hi[y*cw+x]/255-0.35)/0.3;
-        if(v<=0) continue; if(v>1) v=1;
-        alpha[row+x]=(v*v*(3-2*v))*255+0.5;
+        alpha[row+x]=curve(hi[y*cw+x]);
       }
     }
+    hi=null;
+
     $('busyText').textContent='Merapikan tepi…';
     S.mask=mk(W,H); S.mctx=S.mask.getContext('2d');
     restoreAlpha(erodeAlpha(alpha,W,H,Math.max(1,Math.round(Math.max(cw,ch)/1000))));
-    decontam(); composeCut();
+    decontam();
+    if(adv){ $('busyText').textContent='Membersihkan sisa latar…'; await cleanResidue(true); }
+    composeCut();
     if(prev) commit(prev); else { S.hist=[]; S.redo=[]; }
     S.zoom=1; S.offX=0; S.offY=0; $('zoom').value=100; $('zoomVal').textContent='100%';
     if(fallback){
@@ -1153,28 +1225,60 @@ async function estimate(){
   }
 }
 function syncExportUI(){
+  syncName();
   document.querySelectorAll('#fmtSeg button').forEach(b=>b.classList.toggle('on',b.dataset.fmt===S.fmt));
   document.querySelectorAll('#qList .qrow').forEach(r=>r.classList.toggle('on',r.dataset.q===S.q));
   $('expNote').textContent = S.fmt==='png'
     ? 'PNG: kualitas mengatur besar resolusi. Latar transparan tetap tersimpan.'
     : 'JPG: kualitas mengatur kekompresan. Bila background transparan, otomatis berlatar putih.';
 }
+const DEF_NAME='pasfoto-smartbg';
+function cleanName(v){
+  v=String(v||'').replace(/[\\\/:*?"<>|\u0000-\u001f]/g,'').replace(/\.(jpe?g|png)$/i,'').replace(/\s+/g,' ').trim().replace(/^\.+/,'');
+  return (v||DEF_NAME).slice(0,60);
+}
+function fileName(){ return cleanName(S.fname)+'.'+S.fmt; }
+function syncName(){ $('fext').textContent='.'+S.fmt; }
+async function makeFile(){
+  const scale = S.fmt==='png' ? QUAL[S.q].png : 1;
+  const blob=await toBlob(exportCanvas(scale),S.q);
+  if(!blob) throw new Error('blob');
+  return blob;
+}
 async function save(){
   if(!S.img) return;
-  $('btnSave').disabled=true;
+  $('btnSave').disabled=true; $('btnShare').disabled=true;
   try{
-    const scale = S.fmt==='png' ? QUAL[S.q].png : 1;
-    const blob=await toBlob(exportCanvas(scale),S.q);
-    if(!blob) throw new Error('blob');
-    const d=new Date(), p=n=>String(n).padStart(2,'0');
-    const name='smartbg-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.'+S.fmt;
+    const blob=await makeFile(), name=fileName();
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     say('Tersimpan: '+name+' ('+fmtSize(blob.size)+')','ok');
     $('exportPanel').hidden=true;
   }catch(e){ say('Gagal menyimpan foto. Coba lagi.','err'); }
-  finally{ $('btnSave').disabled=false; }
+  finally{ $('btnSave').disabled=false; $('btnShare').disabled=false; }
+}
+// Bagikan langsung ke WA atau aplikasi lain lewat menu bagikan perangkat
+function canShareFiles(){
+  try{
+    return !!(navigator.share && navigator.canShare &&
+      navigator.canShare({files:[new File([new Blob(['x'])],'a.jpg',{type:'image/jpeg'})]}));
+  }catch(e){ return false; }
+}
+async function share(){
+  if(!S.img) return;
+  $('btnSave').disabled=true; $('btnShare').disabled=true;
+  try{
+    const blob=await makeFile(), name=fileName();
+    const file=new File([blob],name,{type:blob.type});
+    if(!navigator.canShare || !navigator.canShare({files:[file]})) throw new Error('nofile');
+    await navigator.share({files:[file], title:'SmartBG'});
+    $('exportPanel').hidden=true;
+  }catch(e){
+    if(e && e.name==='AbortError') return; // pengguna menutup menu bagikan
+    say('Menu bagikan tidak bisa dibuka. Gunakan tombol Simpan.','err');
+  }
+  finally{ $('btnSave').disabled=false; $('btnShare').disabled=false; }
 }
 
 /* ====== Tombol & acara ====== */
@@ -1255,13 +1359,29 @@ document.addEventListener('click',e=>{
 document.querySelectorAll('#fmtSeg button').forEach(b=>b.onclick=()=>{ S.fmt=b.dataset.fmt; syncExportUI(); estimate(); });
 document.querySelectorAll('#qList .qrow').forEach(r=>r.onclick=()=>{ S.q=r.dataset.q; syncExportUI(); });
 $('btnSave').onclick=save;
+$('btnShare').onclick=share;
+if(canShareFiles()) $('btnShare').hidden=false;
+$('fname').addEventListener('input',e=>{ S.fname=e.target.value; });
+$('fname').addEventListener('blur',e=>{ S.fname=cleanName(e.target.value); e.target.value=S.fname; });
+$('fname').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); } });
+
+/* Pilihan cara hapus background: Standar atau Pembersihan Tingkat Lanjut */
+function syncProc(){
+  document.querySelectorAll('#modes .mode').forEach(b=>b.classList.toggle('on',b.dataset.pm===S.proc));
+}
+document.querySelectorAll('#modes .mode').forEach(b=>b.onclick=async()=>{
+  const m=b.dataset.pm;
+  if(m===S.proc||S.busy) return;
+  S.proc=m; syncProc();
+  if(S.mask) await removeBg(); // sudah ada hasil: ulangi dengan cara yang dipilih (bisa di-Undo)
+});
 
 $('btnAbout').onclick=()=>$('about').showModal();
 $('aboutClose').onclick=()=>$('about').close();
 
 window.addEventListener('resize',()=>{ if(S.img) render(); });
 
-buildSwatches(); syncExportUI(); setTool('erase'); setTab('utama');
+buildSwatches(); syncExportUI(); syncProc(); setTool('erase'); setTab('utama');
 })();
 </script>
 </body>

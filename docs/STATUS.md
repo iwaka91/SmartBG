@@ -18,6 +18,10 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - v2.3: mode **Cek Tepi** di tab Poles (latar sementara hijau agar residu terlihat)
 - v2.3: **Presisi Tepi** Sedang/Tinggi/Maksimal di tab Poles (mengulang penghapusan dengan penyaring tepi lebih besar; turun otomatis ke Sedang bila memori tidak cukup)
 - v2.3: panel **Tips foto** di tab Utama
+- v2.4: pilihan di beranda **Standar** (bawaan) atau **Pembersihan Tingkat Lanjut** (MediaPipe yang sama; presisi minimal Tinggi, penyaring tepi dua tahap, peralihan tepi lebih sempit, sisa latar dibersihkan otomatis). Bisa diganti setelah ada hasil (proses diulang, bisa di-Undo)
+- v2.4: menu **Bagikan** di panel Ekspor (WA dan aplikasi lain lewat menu bagikan perangkat; tombol disembunyikan bila peramban tidak mendukung)
+- v2.4: **nama berkas** bisa diubah dengan mengetuknya (bawaan `pasfoto-smartbg`; ekstensi mengikuti format)
+- v2.4: halaman **About** disusun ulang: deskripsi, privasi, teknologi, lisensi, pengembang, tautan totogutomo.com, Saweria (ikon kopi), surel
 
 ### Hasil uji (28 Okt 2026, MediaPipe asli, peramban headless)
 - Foto pas foto berlatar polos: tepi bersih, tidak ada garis kuning sisa latar
@@ -28,8 +32,11 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Foto seluruh badan atau orang kecil di dalam bingkai: tepi masih kasar. Aplikasi ditujukan untuk pas foto
 - Belum diuji di perangkat Android dan setelah dibungkus APK
 
+### Keputusan 28 Okt 2026
+- Rencana model lanjutan (BiRefNet/ONNX) **dibatalkan**: terlalu berat untuk HP dan perlu unduhan besar. Digantikan mode Tingkat Lanjut berbasis MediaPipe yang sama.
+- Uji v2.4 (komputer, MediaPipe asli, 2 foto contoh): tepi setengah transparan berkurang sekitar 35% dibanding Standar, wajah dan rambut utuh. Perbedaannya halus; rambut keriting dan kerudung perlu diuji di HP.
+
 ### Belum dikerjakan
-- Model lanjutan (lebih tajam) sebagai pilihan di beranda; default tetap MediaPipe (masih didiskusikan)
 - Fitur jas dan dasi (butuh aset PNG transparan berlisensi atau buatan sendiri)
 - Pembungkusan APK
 
