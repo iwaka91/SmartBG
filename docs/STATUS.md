@@ -52,6 +52,13 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Catatan: jas wol dan blazer hitam dipotong di atas saku; blazer hitam punya celah gelap kecil di sisi pinggang (bagian dalam jas)
 - Total aset ±15 MB; berkas ini terpisah dari index.html dan akan masuk bundel APK
 
+### v2.7.02 (29 Okt 2026): audit total aset jas dan leher rapat
+- Audit 10 berkas jas (repo berisi 10 jas, bukan 12): celah putih di antara lengan dan badan dibuat transparan (9 jas), celah gelap berbingkai garis di sisi Blazer Hitam dibuang, tepi dihaluskan ulang, sisa titik putih/abu di tepi dibuang. Kini hanya jas dan kemejanya yang berwarna
+- Pembersihan tubuh lama mengikuti garis atas jas sampai ke samping lengan (lengan yang melebar ke bawah tidak lagi menyisakan baju lama atau celah warna latar)
+- Slider "Batas leher" dihapus. Leher otomatis rapat: kemeja tertutup dipasang di belakang leher, kainnya diambil dari kemeja jas itu sendiri (tekstur sama), dengan sisi dalam kerah dan bayangan leher halus. Baju asli (batik, seragam) tidak tampil lagi; ujung kerudung masuk ke kerah
+- Topeng dibuat satu bentuk utuh (tanpa sambungan), tepi peralihan sedikit lebih lembut
+- Uji komputer (Chromium): 10 jas x 2 foto (pria berbatik, perempuan berkerudung berseragam pramuka), tanpa galat. Catatan: Jas Navy kadang menampakkan lipatan kecil berbentuk V di kemeja leher
+
 ### v2.7.01 (29 Okt 2026): perbaikan kecil Atribut setelah uji HP
 - Tubuh lama dibersihkan mengikuti garis atas jas (bahu dan kerah), bukan garis datar. Di luar lebar jas semua di bawah ujung kerah dibersihkan. Kerudung di atas bahu tetap utuh
 - Lubang leher: foto asli hanya tampil sampai "Batas leher" (slider baru, bawaan 45%); di bawahnya diisi warna kemeja jas itu sendiri dengan bayangan halus

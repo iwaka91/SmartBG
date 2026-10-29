@@ -373,12 +373,7 @@ dialog .btn{margin-top:18px;width:100%}
         <input type="range" id="aSize" min="40" max="250" value="100">
         <span id="aSizeVal">100%</span>
       </div>
-      <div class="zoomrow" id="aNeckRow">
-        <span class="lbl">Batas leher</span>
-        <input type="range" id="aNeck" min="15" max="100" value="45">
-        <span id="aNeckVal">45%</span>
-      </div>
-      <p class="note">Ketuk jas atau dasi di foto untuk memilih. Geser satu jari untuk memindahkan, cubit dua jari untuk ukuran. Ketuk dan tahan dasi untuk memunculkan 8 titik, lalu tarik titik untuk membuat dasi kurus, gendut, panjang, atau pendek. Ketuk di luar dasi untuk menyembunyikan titik. Batas leher mengatur seberapa jauh leher atau kerudung terlihat di dalam kerah; di bawahnya diisi kemeja.</p>
+      <p class="note">Ketuk jas atau dasi di foto untuk memilih. Geser satu jari untuk memindahkan, cubit dua jari untuk ukuran. Ketuk dan tahan dasi untuk memunculkan 8 titik, lalu tarik titik untuk membuat dasi kurus, gendut, panjang, atau pendek. Ketuk di luar dasi untuk menyembunyikan titik.</p>
       <button class="btn block" id="aReset">Atur ulang posisi</button>
       <p class="msg" id="msg4"></p>
     </div>
@@ -389,7 +384,7 @@ dialog .btn{margin-top:18px;width:100%}
 
 <dialog id="about">
   <h2>SmartBG</h2>
-  <p class="ver">Versi 2.7.01</p>
+  <p class="ver">Versi 2.7.02</p>
 
   <h4>Deskripsi singkat</h4>
   <p>Aplikasi penghapus latar belakang pas foto. Pilih warna latar (putih, merah, biru, dan lainnya), rapikan tepi, ubah rasio, lalu simpan atau bagikan.</p>
@@ -502,6 +497,11 @@ function jasInfo(item,img){
   const top=new Int32Array(w).fill(-1);
   for(let i=0;i<w;i++){ for(let y=0;y<h;y++) if(d[(y*w+i)*4+3]>=128){ top[i]=y; break; } }
   let jl=0, jr=w-1; while(jl<w&&top[jl]<0) jl++; while(jr>0&&top[jr]<0) jr--;
+  // garis potong luar: dari tengah ke samping tidak boleh turun lebih curam dari bahu,
+  // agar celah di samping lengan (lengan melebar ke bawah) ikut dibersihkan
+  const cut=Float32Array.from(top,v=>v<0?1e9:v), sl=1.2;
+  for(let i=cx-1;i>=0;i--) cut[i]=Math.min(cut[i],cut[i+1]+sl);
+  for(let i=cx+1;i<w;i++) cut[i]=Math.min(cut[i],cut[i-1]+sl);
   const spans=[]; let vy=0;
   for(let y=0;y<h;y++){
     const r=y*w; if(d[(r+cx)*4+3]>=128){ vy=y; break; }
@@ -511,23 +511,31 @@ function jasInfo(item,img){
     spans.push([l-dil, rr+dil]);
   }
   if(!vy) vy=item.leherV;
-  let sr=0,sg=0,sb=0,n=0;                        // warna kemeja tepat di bawah ujung V
-  for(let y=vy+6;y<Math.min(h,vy+40);y+=2) for(let i=cx-14;i<=cx+14;i+=2){
-    const o=(y*w+i)*4; if(d[o+3]<200) continue; sr+=d[o]; sg+=d[o+1]; sb+=d[o+2]; n++;
+  // baris di atas ujung kerah belum dibatasi kiri-kanan (lebar penuh): pakai lebar baris pertama yang terbatas
+  let y0=spans.findIndex(([l,rr])=>l>dil && rr<w-1-dil);
+  if(y0<0) y0=0;
+  for(let y=0;y<y0;y++) spans[y]=spans[y0].slice();
+  const smp=[];                                  // warna kemeja di bawah ujung V (bagian terang, bukan bayangan)
+  for(let y=vy+6;y<Math.min(h,vy+60);y+=2) for(let i=cx-30;i<=cx+30;i+=2){
+    const o=(y*w+i)*4; if(i<0||i>=w||d[o+3]<220) continue; smp.push([d[o],d[o+1],d[o+2],d[o]+d[o+1]+d[o+2]]);
   }
+  smp.sort((a,b)=>a[3]-b[3]);
+  let sr=0,sg=0,sb=0,n=0;
+  for(let q=Math.floor(smp.length*0.55);q<Math.floor(smp.length*0.9);q++){ sr+=smp[q][0]; sg+=smp[q][1]; sb+=smp[q][2]; n++; }
   const shirt=n?[sr/n,sg/n,sb/n]:[240,240,240];
-  const o={w,h,top,jl,jr,spans,vy,cx,shirt}; A.info[item.id]=o; return o;
+  const o={w,h,top,cut,jl,jr,spans,vy,cx,shirt,y0,d}; A.info[item.id]=o; return o;
 }
-// Garis batas leher (baris aset) pada kolom x: makin dalam di tengah, naik ke tepi kerah
+// Garis batas leher (baris aset) pada kolom x: makin dalam di tengah, naik ke tepi kerah. Tetap, tanpa slider
 function neckLine(I,x){
-  const half=Math.max(1,(I.spans[0]?(I.spans[0][1]-I.spans[0][0])/2:120));
+  const hs=I.spans[I.y0]||[I.cx-120,I.cx+120], half=Math.max(1,(hs[1]-hs[0])/2);
   const t=Math.min(1,Math.abs(x-I.cx)/half);
-  return I.vy*A.neck*(1-0.6*t*t) + 0.1*I.vy*(1-t);   // berbentuk U: tepi kerah lebih tinggi
+  const D=Math.max(20,Math.min(0.36*240, I.vy-I.y0-12));   // leher terlihat sedalam ini dari ujung kerah
+  return I.y0 + D*(1-0.55*t*t);                              // lengkung lembut, tepi kerah lebih tinggi
 }
 // Batas potong foto asli pada kolom aset x: di bawah garis ini tubuh lama disembunyikan
 function cutRow(I,x){
-  const t=I.top[x]; if(t<0) return 0;
-  const inHole=I.spans[0] && x>=I.spans[0][0] && x<=I.spans[0][1];
+  const t=I.cut[clamp(Math.round(x),0,I.w-1)]; if(t>=1e9) return 0;
+  const hs=I.spans[I.y0], inHole=hs && x>=hs[0] && x<=hs[1];
   return inHole ? Math.min(t, neckLine(I,x)) : t+2;
 }
 // Topeng "sembunyikan" (resolusi 1/2, koordinat foto). Di dalam lebar jas mengikuti garis atas jas,
@@ -535,46 +543,63 @@ function cutRow(I,x){
 function hideMask(){
   if(!(S.mask && A.placed && A.jas && A.jasImg)) return null;
   const W=S.img.width, H=S.img.height, q=2, w=Math.ceil(W/q), h=Math.ceil(H/q), soft=!A.drag;
-  const key=[A.jas.id,A.tx.toFixed(1),A.ty.toFixed(1),A.k.toFixed(4),A.neck,W,H,soft].join('|');
+  const key=[A.jas.id,A.tx.toFixed(1),A.ty.toFixed(1),A.k.toFixed(4),W,H,soft].join('|');
   if(A.hm2 && A.hmKey===key) return A.hm2;
   if(!A.hm || A.hm.width!==w || A.hm.height!==h){ A.hm=mk(w,h); A.hm2=mk(w,h); }
   const I=jasInfo(A.jas,A.jasImg), k=A.k, ox=A.tx-A.jas.leherX*k, oy=A.ty;
   const X=x=>(ox+x*k)/q, Y=y=>(oy+y*k)/q;
   const m=A.hm.getContext('2d');
   m.setTransform(1,0,0,1,0,0); m.clearRect(0,0,w,h); m.fillStyle='#fff';
-  const yc=Y(Math.max(0,I.top[I.jl]>=0?Math.min(I.top[I.jl],I.top[I.jr]):0));
-  m.fillRect(0,Y(0),Math.max(0,X(I.jl)),h);                    // kiri luar jas
-  m.fillRect(X(I.jr),Y(0),Math.max(0,w-X(I.jr)),h);            // kanan luar jas
-  m.beginPath(); m.moveTo(X(I.jl),h+2);
+  // satu bentuk utuh (tanpa sambungan): luar jas kiri, garis atas jas, luar jas kanan
+  m.beginPath(); m.moveTo(-4,h+4); m.lineTo(-4,Y(cutRow(I,0)));
   const st=Math.max(1,Math.round(1.5*q/k));
-  for(let x=I.jl;x<=I.jr;x+=st) m.lineTo(X(x),Y(cutRow(I,x)));
-  m.lineTo(X(I.jr),Y(cutRow(I,I.jr))); m.lineTo(X(I.jr),h+2); m.closePath(); m.fill();
+  for(let x=0;x<I.w;x+=st) m.lineTo(X(x),Y(cutRow(I,x)));
+  m.lineTo(X(I.w-1),Y(cutRow(I,I.w-1))); m.lineTo(w+4,Y(cutRow(I,I.w-1))); m.lineTo(w+4,h+4); m.closePath(); m.fill();
   const m2=A.hm2.getContext('2d'); m2.setTransform(1,0,0,1,0,0); m2.clearRect(0,0,w,h);
-  if(soft){ try{ m2.filter='blur('+Math.max(0.6,0.006*240*k/q).toFixed(2)+'px)'; }catch(_){} }
+  if(soft){ try{ m2.filter='blur('+Math.max(0.8,0.014*240*k/q).toFixed(2)+'px)'; }catch(_){} }
   m2.drawImage(A.hm,0,0); m2.filter='none';
   A.hmKey=key; return A.hm2;
 }
-// Isian kemeja di lubang leher di bawah batas leher (ukuran aset), diwarnai kemeja jas itu sendiri
+// Kemeja tertutup (ukuran aset), dipasang DI BELAKANG foto orang. Kainnya diambil dari kemeja jas itu sendiri
+// (bagian di bawah ujung V dicerminkan ke atas dan direntang selebar lubang), jadi tekstur dan warnanya cocok.
+// Di atas garis leher (samping leher) kain digelapkan = sisi dalam kerah; di bawahnya bayangan leher halus.
 function shirtFill(){
-  const I=jasInfo(A.jas,A.jasImg), key=A.jas.id+'|'+A.neck;
+  const I=jasInfo(A.jas,A.jasImg), key=A.jas.id;
   if(A.fill && A.fillKey===key) return A.fill;
-  const c=A.fill&&A.fill.width===I.w&&A.fill.height===I.h?A.fill:mk(I.w,I.h), x=c.getContext('2d');
-  x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation='source-over'; x.clearRect(0,0,I.w,I.h);
-  const [r,g,b]=I.shirt, col=f=>'rgb('+Math.round(r*f)+','+Math.round(g*f)+','+Math.round(b*f)+')';
-  x.fillStyle=col(1);
-  I.spans.forEach(([l,rr],y)=>x.fillRect(l,y,rr-l+1,1));
-  x.fillRect(I.cx-I.vy*0.2,I.vy-2,I.vy*0.4,12);              // menutup ujung V
-  // buang bagian di atas batas leher
-  x.globalCompositeOperation='destination-out'; x.beginPath(); x.moveTo(-5,-5);
-  for(let i=0;i<=I.w;i+=4) x.lineTo(i,neckLine(I,i)); x.lineTo(I.w+5,-5); x.closePath(); x.fill();
-  // bayangan lembut di bawah dagu/kerudung dan di tengah (kesan kain)
+  const {w,h,d,cx,vy,y0,shirt}=I, c=mk(w,h), x=c.getContext('2d');
+  const out=x.createImageData(w,h), o=out.data;
+  const far=(p)=>Math.abs(d[p]-shirt[0])+Math.abs(d[p+1]-shirt[1])+Math.abs(d[p+2]-shirt[2])>110 || d[p+3]<200;
+  const segOf=sy=>{ // kain kemeja pada baris sumber: dari tengah ke kiri/kanan sampai bukan kemeja
+    const r=sy*w; let l=cx, rr=cx;
+    while(l>0 && !far((r+l-1)*4) && cx-l<200) l--;
+    while(rr<w-1 && !far((r+rr+1)*4) && rr-cx<200) rr++;
+    return [l,rr];
+  };
+  const yEnd=Math.min(h-1,vy+14);
+  for(let y=y0;y<=yEnd;y++){
+    const sp=I.spans[Math.min(y,I.spans.length-1)]||[cx-20,cx+20];
+    let sy=Math.min(h-1, vy+8+Math.max(0,vy-y)); let seg=segOf(sy);
+    if(seg[1]-seg[0]<12){ sy=Math.min(h-1,vy+10); seg=segOf(sy); }
+    if(seg[1]-seg[0]<6) continue;
+    const L=Math.max(0,sp[0]), R=Math.min(w-1,sp[1]);
+    for(let xx=L;xx<=R;xx++){
+      // tengah tetap di tengah (belahan kancing lurus), sisi direntang
+      const f=(xx-cx)/Math.max(1,(xx<cx?cx-L:R-cx));
+      const sx=Math.round(cx+f*(xx<cx?cx-seg[0]:seg[1]-cx));
+      const sp4=(sy*w+clamp(sx,0,w-1))*4, tp=(y*w+xx)*4;
+      o[tp]=d[sp4]; o[tp+1]=d[sp4+1]; o[tp+2]=d[sp4+2]; o[tp+3]=255;
+    }
+  }
+  x.putImageData(out,0,0);
   x.globalCompositeOperation='source-atop';
-  const n0=neckLine(I,I.cx), gr=x.createLinearGradient(0,n0-0.12*I.vy,0,n0+0.18*I.vy);
-  gr.addColorStop(0,'rgba(0,0,0,.28)'); gr.addColorStop(1,'rgba(0,0,0,0)');
-  x.fillStyle=gr; x.fillRect(0,0,I.w,I.h);
-  const gx=x.createLinearGradient(I.cx-0.25*I.vy,0,I.cx+0.25*I.vy,0);
-  gx.addColorStop(0,'rgba(0,0,0,0)'); gx.addColorStop(.5,'rgba(0,0,0,.06)'); gx.addColorStop(1,'rgba(0,0,0,0)');
-  x.fillStyle=gx; x.fillRect(0,0,I.w,I.h);
+  const n0=neckLine(I,cx);
+  x.save(); x.beginPath(); x.moveTo(-5,-5);           // sisi dalam kerah (di samping leher)
+  for(let i=0;i<=w;i+=4) x.lineTo(i,neckLine(I,i)); x.lineTo(w+5,-5); x.closePath(); x.clip();
+  x.fillStyle='rgba(0,0,0,.10)'; x.fillRect(0,0,w,h); x.restore();
+  x.save(); x.beginPath(); x.moveTo(-5,h);           // bayangan leher jatuh di kemeja
+  for(let i=0;i<=w;i+=4) x.lineTo(i,neckLine(I,i)); x.lineTo(w+5,h); x.closePath(); x.clip();
+  const gs=x.createLinearGradient(0,n0-4,0,n0+0.12*240); gs.addColorStop(0,'rgba(0,0,0,.16)'); gs.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=gs; x.fillRect(0,0,w,h); x.restore();
   x.globalCompositeOperation='source-over';
   A.fill=c; A.fillKey=key; return c;
 }
@@ -590,6 +615,9 @@ function drawPerson(ctx,x,y,w,h){
   t.imageSmoothingEnabled=true; t.imageSmoothingQuality='high';
   t.drawImage(source(),x,y,w,h);
   t.globalCompositeOperation='destination-out'; t.drawImage(hm,x,y,w,h);
+  const sc=w/S.img.width, k=A.k;                    // sisi dalam kerah di belakang leher (tidak ada celah warna latar)
+  t.globalCompositeOperation='destination-over';
+  t.drawImage(shirtFill(), x+(A.tx-A.jas.leherX*k)*sc, y+A.ty*sc, A.jas.lebar*k*sc, A.jas.tinggi*k*sc);
   t.globalCompositeOperation='source-over'; t.setTransform(1,0,0,1,0,0);
   ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(A.tmp,0,0); ctx.restore();
 }
@@ -605,7 +633,6 @@ function drawAttrs(ctx){
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   const k=A.k;
   if(A.jas && A.jasImg){
-    ctx.drawImage(shirtFill(), A.tx-A.jas.leherX*k, A.ty, A.jas.lebar*k, A.jas.tinggi*k);
     ctx.drawImage(A.jasImg, A.tx-A.jas.leherX*k, A.ty, A.jas.lebar*k, A.jas.tinggi*k);
   }
   const bx=A.dasiImg?tieBox():null;
@@ -2427,7 +2454,7 @@ $('aSize').addEventListener('input',e=>{
   aChanged();
 });
 document.querySelectorAll('#aSelSeg button').forEach(b=>b.onclick=()=>{ aSetSel(b.dataset.sel); aTieEdit(b.dataset.sel==='dasi'); });
-$('aNeck').addEventListener('input',e=>{ A.neck=+e.target.value/100; $('aNeckVal').textContent=e.target.value+'%'; requestDraw(); });
+
 $('aReset').onclick=async()=>{
   if(!S.mask||S.busy||!A.placed) return;
   setBusy(true,'Mengatur ulang posisi…');
