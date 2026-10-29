@@ -12,12 +12,15 @@ Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih
 - Tab **Poles**: Penghapus, Kuas, Ajaib, Blur, Undo/Redo, slider Tepi, lingkaran zoom, Cek Tepi, Bersihkan Sisa Latar, Presisi Tepi (Sedang/Tinggi/Maksimal)
 - Tab **Crop**: rasio foto 1x1, 3x4, 4x6 dengan geser dan zoom
 - Tab **Percantik**: tombol Percantik AI, Kulit Mulus, Cahaya, Kilap Minyak, Bawah Mata, Warna Kulit, Mata dan Alis, Sebelum/Sesudah, Undo/Redo/Reset (memakai MediaPipe Face Mesh; berkasnya perlu ada di `lib/` agar offline)
+- Tab **Poles** juga memuat **Koreksi Bias Latar Belakang** (kulit saja) dan **Outline** (putih/palet, tebal bisa diatur)
+- Tab **Atribut**: jas dan dasi dengan penempatan otomatis di bawah dagu, geser dan cubit untuk mengatur (bukan untuk dokumen resmi)
 - Pilihan **Standar** atau **Pembersihan Tingkat Lanjut** (tepi lebih tajam) di beranda
 - Ekspor JPG atau PNG, kualitas maksimal/sedang/rendah dengan estimasi ukuran, nama berkas bisa diubah, dan menu Bagikan
 
 ## Struktur
 - `index.html` — seluruh aplikasi (satu berkas)
 - `lib/` — MediaPipe selfie_segmentation 0.1.1675465747 (Apache-2.0), dimuat lebih dulu sebelum CDN
+- `assets/` — jas dan dasi PNG transparan beserta `jas.json` dan `dasi.json`
 - `docs/STATUS.md` — laporan status
 - `archive/` — arsip versi lama
 

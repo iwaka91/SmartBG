@@ -44,7 +44,7 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Uji komputer (Chromium, foto astronot domain publik): kedua jalur berjalan tanpa galat. Jalur dengan model wajah **hanya diuji dengan titik wajah tiruan**, belum dengan model asli. Perlu uji di HP dengan 3-5 foto nyata
 - Takaran bawaan tombol Percantik AI: kulit 45, cahaya 40, kilap 50, bawah mata 35, warna kulit 40, mata dan alis 30 (bisa disetel ulang setelah uji HP)
 
-### Aset Atribut (29 Okt 2026) — aset siap, fitur belum dibuat
+### Aset Atribut (29 Okt 2026)
 - `assets/jas/`: 10 jas PNG transparan (6 jas pria, 2 jas hitam, 2 blazer wanita) + `jas.json`. Hasil generasi AI (aman lisensi). Bagian dalam/kerah belakang dan lubang leher sudah dihapus agar jas bisa menjadi lapisan atas foto; kerah depan, bahu, dan kancing utuh
 - Semua jas diseragamkan: lebar bukaan leher 240 px. `jas.json` berisi `leherX` (tengah leher), `leherV` (titik V paling bawah, tempat dasi dipasang), `leherLebar`, lebar dan tinggi berkas
 - `assets/dasi/`: 10 dasi PNG transparan (termasuk kupu-kupu) + `dasi.json` (`simpulX`, `simpulY` = titik atas tengah, `simpulLebar` = 100 px). Logo dan tali sudah dibuang
@@ -53,8 +53,7 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Total aset ±15 MB; berkas ini terpisah dari index.html dan akan masuk bundel APK
 
 ### Belum dikerjakan
-- Tab **Atribut** (Jas dan Dasi): penempatan otomatis di bawah dagu + geser/zoom jari, sembunyikan tubuh lama di bawah leher, peringatan untuk dokumen resmi, label lima tab
-- v2.6: Koreksi Bias Latar Belakang (kulit/wajah saja), perbaikan tombol ✕ peringatan (`w.hidden=B.warnOff`), Outline (putih/palet, paling bawah tab Poles)
+- Uji di HP dengan foto nyata (Atribut, Koreksi Bias, Outline, Face Mesh asli)
 - Pembungkusan APK
 
 ### Catatan perubahan repo
