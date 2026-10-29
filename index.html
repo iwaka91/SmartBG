@@ -138,6 +138,15 @@ dialog .btn{margin-top:18px;width:100%}
 .fname span{color:var(--mute);font-weight:600}
 .expbtns{display:flex;gap:8px}
 .expbtns .btn{flex:1}
+
+/* Percantik */
+.warn{display:flex;align-items:flex-start;gap:8px;background:#fff7e0;border:1px solid #f3d98b;color:#7a5b00;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin:0 0 12px}
+.warn span{flex:1}
+.warn button{border:0;background:transparent;color:#7a5b00;font-size:16px;line-height:1;padding:0 2px}
+.warn.hot{background:#fdecec;border-color:#f3b1b1;color:#9b1c1c}
+.warn.hot button{color:#9b1c1c}
+#bBox .zoomrow .lbl{min-width:104px}
+#bBox .off{opacity:.45}
 </style>
 </head>
 <body>
@@ -181,9 +190,10 @@ dialog .btn{margin-top:18px;width:100%}
   </section>
 
   <nav class="tabs">
-    <button data-tab="utama" class="on">Utama</button>
+    <button data-tab="utama" class="on">Beranda</button>
     <button data-tab="poles">Poles</button>
-    <button data-tab="lainnya">Lainnya</button>
+    <button data-tab="lainnya">Crop</button>
+    <button data-tab="percantik">Percantik</button>
   </nav>
 
   <section class="panel" id="tab-utama">
@@ -218,7 +228,7 @@ dialog .btn{margin-top:18px;width:100%}
   </section>
 
   <section class="panel" id="tab-poles" hidden>
-    <p class="note" id="polesLock">Hapus background dulu di tab Utama, lalu rapikan hasilnya di sini.</p>
+    <p class="note" id="polesLock">Hapus background dulu di tab Beranda, lalu rapikan hasilnya di sini.</p>
     <div id="polesBox">
       <div class="row">
         <button class="btn" id="btnUndo">↶ Undo</button>
@@ -290,13 +300,38 @@ dialog .btn{margin-top:18px;width:100%}
     <p class="note">Geser foto dengan jari, cubit untuk memperbesar atau memperkecil.</p>
     <button class="btn block" id="btnReset">Atur ulang posisi</button>
   </section>
+
+  <section class="panel" id="tab-percantik" hidden>
+    <p class="note" id="bLock">Hapus background dulu di tab Beranda, lalu percantik fotonya di sini.</p>
+    <div id="bBox">
+      <div class="warn" id="bWarn"><span id="bWarnText">Untuk pas foto dokumen resmi (CPNS, ijazah, KTP), jangan diedit berlebihan.</span><button type="button" id="bWarnX" aria-label="Tutup peringatan">✕</button></div>
+      <button class="btn primary block" id="btnAuto">Percantik AI</button>
+      <div class="zoomrow">
+        <span class="lbl">Kekuatan</span>
+        <input type="range" id="bMaster" min="0" max="100" value="100">
+        <span id="bMasterVal">100%</span>
+      </div>
+      <button class="btn block" id="btnCompare" style="margin-top:10px">Tahan untuk lihat Sebelum</button>
+
+      <h3 style="margin-top:16px">Atur sendiri</h3>
+      <div id="bRows"></div>
+      <p class="note" id="bNote" style="margin-top:8px"></p>
+
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="bUndo">↶ Undo</button>
+        <button class="btn" id="bRedo">↷ Redo</button>
+        <button class="btn" id="bReset">Reset</button>
+      </div>
+      <p class="msg" id="msg3"></p>
+    </div>
+  </section>
 </main>
 
 <footer>SmartBG ©2026 | totogutomo.com</footer>
 
 <dialog id="about">
   <h2>SmartBG</h2>
-  <p class="ver">Versi 2.4</p>
+  <p class="ver">Versi 2.5</p>
 
   <h4>Deskripsi singkat</h4>
   <p>Aplikasi penghapus latar belakang pas foto. Pilih warna latar (putih, merah, biru, dan lainnya), rapikan tepi, ubah rasio, lalu simpan atau bagikan.</p>
@@ -305,7 +340,7 @@ dialog .btn{margin-top:18px;width:100%}
   <p>Foto diproses langsung di perangkat dan tidak diunggah ke server mana pun. Aplikasi tidak meminta akun dan tidak mengumpulkan data pribadi.</p>
 
   <h4>Teknologi yang digunakan</h4>
-  <p>MediaPipe Selfie Segmentation (Google) untuk mengenali orang di foto, serta penyaring tepi dan pembersih sisa latar yang berjalan di perangkat.</p>
+  <p>MediaPipe Selfie Segmentation (Google) untuk mengenali orang di foto, MediaPipe Face Mesh (Google) untuk mengenali area wajah pada fitur Percantik, serta penyaring tepi dan pembersih sisa latar yang berjalan di perangkat.</p>
 
   <h4>Lisensi</h4>
   <p>MediaPipe berlisensi Apache License 2.0, hak cipta Google. SmartBG gratis digunakan.</p>
@@ -353,7 +388,7 @@ const HINTS = {
 
 /* ====== Status ====== */
 const S = {
-  img:null, imgData:null, fg:null, mask:null, mctx:null, cut:null, cutDirty:false, bg:null,
+  img:null, imgData:null, bpx:null, cmp:false, fg:null, mask:null, mctx:null, cut:null, cutDirty:false, bg:null,
   hist:[], redo:[],
   ratio:'asli', zoom:1, offX:0, offY:0,
   fmt:'jpg', q:'max', tab:'utama', busy:false, proc:'std', fname:'pasfoto-smartbg'
@@ -374,7 +409,7 @@ function composeCut(){
   if(!S.cut || S.cut.width!==W || S.cut.height!==H) S.cut=mk(W,H);
   const c=S.cut.getContext('2d');
   c.globalCompositeOperation='source-over'; c.clearRect(0,0,W,H);
-  c.drawImage(S.fg||S.img,0,0);
+  c.drawImage(S.cmp?S.img:(S.fg||S.img),0,0);
   c.globalCompositeOperation='destination-in'; c.drawImage(S.mask,0,0);
   c.globalCompositeOperation='source-over';
   S.cutDirty=false;
@@ -384,7 +419,7 @@ function source(){
   return S.img;
 }
 function say(t, cls){
-  ['msg','msg2'].forEach(id=>{ const m=$(id); m.textContent=t||''; m.className='msg'+(cls?' '+cls:''); });
+  ['msg','msg2','msg3'].forEach(id=>{ const m=$(id); m.textContent=t||''; m.className='msg'+(cls?' '+cls:''); });
 }
 function setBusy(on, text){ S.busy=on; $('busy').hidden=!on; if(text) $('busyText').textContent=text; syncButtons(); }
 
@@ -497,8 +532,8 @@ async function loadFile(file){
     const c=mk(Math.max(1,Math.round(w0*sc)), Math.max(1,Math.round(h0*sc)));
     const cx=c.getContext('2d'); cx.imageSmoothingQuality='high'; cx.drawImage(bmp,0,0,c.width,c.height);
     if(bmp.close) bmp.close();
-    S.img=c; S.imgData=null; S.fg=null; S.mask=null; S.mctx=null; S.cut=null; S.bg=null;
-    S.hist=[]; S.redo=[];
+    S.img=c; S.imgData=null; S.bpx=null; S.cmp=false; S.fg=null; S.mask=null; S.mctx=null; S.cut=null; S.bg=null;
+    S.hist=[]; S.redo=[]; if(window.__bReset) window.__bReset();
     S.zoom=1; S.offX=0; S.offY=0; E.z=1; E.px=0; E.py=0;
     $('zoom').value=100; $('zoomVal').textContent='100%';
     $('tips').open=false;
@@ -723,7 +758,7 @@ function decontam(){
   if(!S.mask) return;
   const W=S.img.width, H=S.img.height, n=W*H;
   if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
-  const al=snapshot(), px=new Uint8ClampedArray(S.imgData);
+  const al=snapshot(), px=new Uint8ClampedArray(S.bpx||S.imgData); // S.bpx = foto setelah Percantik
   const sol=new Uint8Array(n);
   for(let i=0;i<n;i++) sol[i]=al[i]>=235?1:0;
   const fill=new Uint8Array(n);
@@ -914,7 +949,7 @@ async function removeBg(level){
     if(fallback){
       E.prec='sedang'; syncPrec();
       say('Memori perangkat tidak cukup untuk presisi '+level+'. Dipakai presisi Sedang.','err');
-    }else say('Background terhapus. Pilih warna background, atau rapikan di tab Poles.','ok');
+    }else say('Background terhapus. Pilih warna background, rapikan di tab Poles, atau percantik di tab Percantik.','ok');
   }catch(e){
     pending=null;
     if(e && e.message==='noperson') say('Orang tidak terdeteksi di foto ini. Coba foto lain yang wajahnya lebih jelas.','err');
@@ -1107,6 +1142,7 @@ function setTab(t){
   S.tab=t; E.cursor=null; loupe.hidden=true;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   $('tab-utama').hidden=(t!=='utama'); $('tab-poles').hidden=(t!=='poles'); $('tab-lainnya').hidden=(t!=='lainnya');
+  $('tab-percantik').hidden=(t!=='percantik');
   view.classList.toggle('drag',t==='lainnya');
   view.classList.toggle('paint',t==='poles');
   render();
@@ -1146,7 +1182,7 @@ const mid=()=>{ const a=ptsArr(); return {x:(a[0].x+a[1].x)/2, y:(a[0].y+a[1].y)
 view.addEventListener('pointerdown',e=>{
   if(!S.img||S.busy) return;
   const t=S.tab;
-  if(t==='utama' || (t==='poles' && !S.mask)) return;
+  if(t==='utama' || t==='percantik' || (t==='poles' && !S.mask)) return;
   e.preventDefault();
   try{ view.setPointerCapture(e.pointerId); }catch(_){}
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -1281,6 +1317,378 @@ async function share(){
   finally{ $('btnSave').disabled=false; $('btnShare').disabled=false; }
 }
 
+/* ====== Percantik ====== */
+const FM_VERSION='0.4.1633559619';
+// Model wajah (Face Mesh): folder lokal "lib/" dulu, lalu CDN
+const FM_SOURCES=['lib/', 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@' + FM_VERSION + '/'];
+const LM={ // nomor titik Face Mesh
+  oval:[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109],
+  eyeR:[33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246],
+  eyeL:[263,249,390,373,374,380,381,382,362,398,384,385,386,387,388,466],
+  lidR:[33,7,163,144,145,153,154,155,133],
+  lidL:[263,249,390,373,374,380,381,382,362],
+  browR:[46,53,52,65,55,107,66,105,63,70],
+  browL:[276,283,282,295,285,336,296,334,293,300],
+  lips:[61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185]
+};
+const BK=['skin','light','shine','eyebag','tone','eyes'];
+const BNAME={skin:'Kulit Mulus',light:'Cahaya',shine:'Kilap Minyak',eyebag:'Bawah Mata',tone:'Warna Kulit',eyes:'Mata dan Alis'};
+const BPRESET={skin:45,light:40,shine:50,eyebag:35,tone:40,eyes:30}; // takaran natural
+const B={ v:{skin:0,light:0,shine:0,eyebag:0,tone:0,eyes:0}, m:100, hist:[], redo:[], last:null,
+  face:undefined, running:false, again:false, warnOff:false, faceOk:null };
+B.last={v:Object.assign({},B.v), m:B.m};
+
+let fmPromise=null, fmPending=null;
+function getFaceMesh(){
+  if(fmPromise) return fmPromise;
+  fmPromise=(async()=>{
+    let lastErr;
+    for(const base of FM_SOURCES){
+      try{
+        if(typeof window.FaceMesh==='undefined') await loadScript(base+'face_mesh.js');
+        const fm=new window.FaceMesh({locateFile:f=>base+f});
+        fm.setOptions({maxNumFaces:1, refineLandmarks:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5});
+        fm.onResults(r=>{ if(fmPending) fmPending(r); });
+        await fm.initialize();
+        return fm;
+      }catch(e){ lastErr=e; try{ delete window.FaceMesh; }catch(_){} }
+    }
+    throw lastErr||new Error('facemesh');
+  })();
+  fmPromise.catch(()=>{ fmPromise=null; });
+  return fmPromise;
+}
+// Titik wajah dalam piksel foto, atau null bila model/wajah tidak ada
+async function findFace(){
+  if(B.face!==undefined) return B.face;
+  try{
+    const fm=await getFaceMesh();
+    const W=S.img.width, H=S.img.height, sm=scaledCrop(S.img,0,0,W,H,1024);
+    const got=new Promise(res=>{ fmPending=res; });
+    await fm.send({image:sm});
+    const r=await Promise.race([got,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))]);
+    fmPending=null;
+    const L=r&&r.multiFaceLandmarks&&r.multiFaceLandmarks[0];
+    B.face=(L&&L.length>=400)?L.map(p=>({x:p.x*W,y:p.y*H})):null;
+  }catch(e){ fmPending=null; B.face=null; }
+  B.faceOk=!!B.face;
+  return B.face;
+}
+
+const smooth01=t=>{ t=t<0?0:(t>1?1:t); return t*t*(3-2*t); };
+function rast(w,h,items){ // isi poligon (grow = pelebaran dalam piksel)
+  const c=mk(w,h), x=c.getContext('2d',{willReadFrequently:true});
+  x.fillStyle='#fff'; x.strokeStyle='#fff'; x.lineJoin='round';
+  for(const it of items){
+    x.beginPath(); it.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath(); x.fill();
+    if(it.grow>0){ x.lineWidth=it.grow*2; x.stroke(); }
+  }
+  const d=x.getImageData(0,0,w,h).data, o=new Uint8Array(w*h);
+  for(let i=0,j=3;i<o.length;i++,j+=4) o[i]=d[j];
+  return o;
+}
+function featherF(a,w,h,r){
+  r=Math.max(1,Math.round(r));
+  const b=boxBlur(boxBlur(a,w,h,r),w,h,r), f=new Float32Array(w*h);
+  for(let i=0;i<f.length;i++) f[i]=b[i]/255;
+  return f;
+}
+// Penyaring berpemandu (pemandu abu-abu): menghaluskan tetapi menjaga garis tepi
+function gfGray(I,chs,w,h,r,eps){
+  const n=w*h, bx=a=>boxMean(a,w,h,r), II=new Float32Array(n);
+  for(let i=0;i<n;i++) II[i]=I[i]*I[i];
+  const mI=bx(I), vI=bx(II);
+  return chs.map(p=>{
+    const Ip=new Float32Array(n); for(let i=0;i<n;i++) Ip[i]=I[i]*p[i];
+    const mp=bx(p), cIp=bx(Ip), a=new Float32Array(n), b=new Float32Array(n);
+    for(let i=0;i<n;i++){ a[i]=(cIp[i]-mI[i]*mp[i])/(vI[i]-mI[i]*mI[i]+eps); b[i]=mp[i]-a[i]*mI[i]; }
+    const ma=bx(a), mb=bx(b), q=new Float32Array(n);
+    for(let i=0;i<n;i++) q[i]=ma[i]*I[i]+mb[i];
+    return q;
+  });
+}
+// Rata-rata berbobot (hanya area kulit yang ikut)
+function nblur(vals,wt,w,h,r){
+  const n=w*h, a=new Float32Array(n);
+  for(let i=0;i<n;i++) a[i]=vals[i]*wt[i];
+  const A=boxMean(boxMean(a,w,h,r),w,h,r), Bw=boxMean(boxMean(wt,w,h,r),w,h,r), o=new Float32Array(n);
+  for(let i=0;i<n;i++) o[i]=A[i]/(Bw[i]+1e-4);
+  return o;
+}
+function statsOf(vals,idx){ // rata-rata dan simpangan, dua putaran (buang pencilan)
+  let m=0,s=0,c=0;
+  for(const i of idx){ m+=vals[i]; c++; } m/=c;
+  for(const i of idx){ const d=vals[i]-m; s+=d*d; } s=Math.sqrt(s/c);
+  let m2=0,c2=0; for(const i of idx){ if(Math.abs(vals[i]-m)<=2*s){ m2+=vals[i]; c2++; } }
+  if(c2>20){ m2/=c2; let s2=0; for(const i of idx){ if(Math.abs(vals[i]-m)<=2*s){ const d=vals[i]-m2; s2+=d*d; } } return {m:m2,s:Math.sqrt(s2/c2)}; }
+  return {m,s};
+}
+
+// Efek wajah pada salinan piksel P. Mengembalikan info untuk tahap Cahaya.
+function faceEffects(P,W,H,eff,face){
+  const al=snapshot();
+  const info={ok:true, rect:null, lw:null, muY:0, noFace:!face};
+  let rect, faceW, g8, ovF=null, feat=null;
+  if(face){
+    const O=LM.oval.map(i=>face[i]);
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    O.forEach(p=>{ if(p.x<x0)x0=p.x; if(p.x>x1)x1=p.x; if(p.y<y0)y0=p.y; if(p.y>y1)y1=p.y; });
+    faceW=x1-x0; const m=faceW*0.2;
+    const rx=Math.max(0,Math.floor(x0-m)), ry=Math.max(0,Math.floor(y0-m));
+    rect={x:rx, y:ry, w:Math.min(W,Math.ceil(x1+m))-rx, h:Math.min(H,Math.ceil(y1+m))-ry};
+  }else{
+    let bx0=W,by0=H,bx1=-1,by1=-1;
+    for(let y=0;y<H;y++){ const o=y*W; for(let x=0;x<W;x++) if(al[o+x]>128){ if(x<bx0)bx0=x; if(x>bx1)bx1=x; if(y<by0)by0=y; if(y>by1)by1=y; } }
+    if(bx1<0) return {ok:false,note:'noperson'};
+    faceW=(bx1-bx0)*0.5;
+    rect={x:bx0, y:by0, w:bx1-bx0+1, h:Math.max(8,Math.round((by1-by0)*0.62))};
+  }
+  if(rect.w<24||rect.h<24) return {ok:false,note:'small'};
+  const rw=rect.w, rh=rect.h, N=rw*rh;
+  const sub=(arr)=>arr.map(i=>[face[i].x-rect.x, face[i].y-rect.y]);
+  // bentuk area kulit
+  if(face){
+    const ov=rast(rw,rh,[{pts:sub(LM.oval)}]);
+    const items=[
+      {pts:sub(LM.eyeR),grow:faceW*0.018},{pts:sub(LM.eyeL),grow:faceW*0.018},
+      {pts:sub(LM.browR),grow:faceW*0.02},{pts:sub(LM.browL),grow:faceW*0.02},
+      {pts:sub(LM.lips),grow:faceW*0.012}];
+    feat=rast(rw,rh,items);
+    g8=new Uint8Array(N); for(let i=0;i<N;i++) g8[i]=(ov[i]&&!feat[i])?255:0;
+    ovF=featherF(ov,rw,rh,faceW*0.02);
+  }else{
+    g8=new Uint8Array(N);
+    for(let y=0;y<rh;y++) for(let x=0;x<rw;x++) g8[y*rw+x]=al[(y+rect.y)*W+x+rect.x]>200?255:0;
+  }
+  const geo=featherF(g8,rw,rh,faceW*0.012);
+  // warna piksel
+  const R=new Float32Array(N), G=new Float32Array(N), Bl=new Float32Array(N);
+  for(let y=0;y<rh;y++){ let o=((y+rect.y)*W+rect.x)*4, k=y*rw; for(let x=0;x<rw;x++,o+=4,k++){ R[k]=P[o]; G[k]=P[o+1]; Bl[k]=P[o+2]; } }
+  const Yof=i=>0.299*R[i]+0.587*G[i]+0.114*Bl[i], Cbof=i=>128-0.168736*R[i]-0.331264*G[i]+0.5*Bl[i], Crof=i=>128+0.5*R[i]-0.418688*G[i]-0.081312*Bl[i];
+  const Y=new Float32Array(N), Cb=new Float32Array(N), Cr=new Float32Array(N);
+  for(let i=0;i<N;i++){ Y[i]=Yof(i); Cb[i]=Cbof(i); Cr[i]=Crof(i); }
+  // contoh warna kulit
+  const idx=[];
+  if(face){
+    for(let i=0;i<N;i+=3) if(geo[i]>0.95) idx.push(i);
+  }else{
+    const cx0=Math.round(rw*0.35), cx1=Math.round(rw*0.65), cy0=Math.round(rh*0.15), cy1=Math.round(rh*0.7);
+    for(let y=cy0;y<cy1;y+=2) for(let x=cx0;x<cx1;x+=2){ const i=y*rw+x;
+      if(geo[i]>0.95&&Cb[i]>=77&&Cb[i]<=127&&Cr[i]>=133&&Cr[i]<=173) idx.push(i); }
+  }
+  if(idx.length<150){ info.ok=false; info.note='noskin'; info.rect=rect; info.lw=ovF||geo; info.muY=0; return info; }
+  const sY=statsOf(Y,idx), sCb=statsOf(Cb,idx), sCr=statsOf(Cr,idx);
+  const scb=Math.max(3,sCb.s)*1.9, scr=Math.max(3,sCr.s)*1.9;
+  const skinW=new Float32Array(N);
+  for(let i=0;i<N;i++){
+    if(geo[i]<0.01) continue;
+    const dcb=(Cb[i]-sCb.m)/scb, dcr=(Cr[i]-sCr.m)/scr;
+    let p=Math.exp(-0.5*(dcb*dcb+dcr*dcr));
+    const dk=(sY.m-Y[i])/(Math.max(8,sY.s)*2.6); // lebih gelap dari kulit (rambut, janggut)
+    if(dk>0.8) p*=smooth01(1-(dk-0.8)/0.9);
+    skinW[i]=geo[i]*p;
+  }
+  info.rect=rect; info.lw=ovF||geo; info.muY=sY.m;
+  const r1=Math.max(2,Math.round(faceW*0.014));
+
+  // 1. Kulit Mulus
+  if(eff.skin>=0.01){
+    const s=eff.skin, I=new Float32Array(N), chs=[R,G,Bl].map(a=>{ const f=new Float32Array(N); for(let i=0;i<N;i++) f[i]=a[i]/255; return f; });
+    for(let i=0;i<N;i++) I[i]=Y[i]/255;
+    const eps=0.0008+0.006*s;
+    let q=gfGray(I,chs,rw,rh,r1,eps);
+    if(s>0.65) q=gfGray(I,q,rw,rh,r1,eps);
+    const arr=[R,G,Bl];
+    for(let i=0;i<N;i++){
+      const a=s*0.9*skinW[i]; if(a<0.002) continue;
+      for(let c=0;c<3;c++){ const o=arr[c][i], sm=q[c][i]*255, tg=sm+0.22*(o-sm); arr[c][i]=o+a*(tg-o); }
+    }
+  }
+  // 2. Kilap Minyak
+  if(eff.shine>=0.01){
+    const s=eff.shine, sm=new Float32Array(N), wt=new Float32Array(N), sd=Math.max(8,sY.s);
+    for(let i=0;i<N;i++){
+      if(skinW[i]<0.2) continue;
+      const y=Yof(i); sm[i]=smooth01((y-(sY.m+0.55*sd))/(1.1*sd+4));
+      wt[i]=skinW[i]*(1-sm[i]);
+    }
+    const rr=Math.max(3,Math.round(faceW*0.05));
+    const TR=nblur(R,wt,rw,rh,rr), TG=nblur(G,wt,rw,rh,rr), TB=nblur(Bl,wt,rw,rh,rr);
+    for(let i=0;i<N;i++){
+      const a=s*0.85*sm[i]*skinW[i]; if(a<0.002) continue;
+      R[i]+=a*(TR[i]-R[i]); G[i]+=a*(TG[i]-G[i]); Bl[i]+=a*(TB[i]-Bl[i]);
+    }
+  }
+  // 3. Warna Kulit (ratakan belang, nilai lama dijaga untuk tekstur)
+  if(eff.tone>=0.01){
+    const s=eff.tone, rr=Math.max(4,Math.round(faceW*0.12)), cb=new Float32Array(N), cr=new Float32Array(N), yy=new Float32Array(N);
+    for(let i=0;i<N;i++){ cb[i]=Cbof(i); cr[i]=Crof(i); yy[i]=Yof(i); }
+    const Tcb=nblur(cb,skinW,rw,rh,rr), Tcr=nblur(cr,skinW,rw,rh,rr), Ty=nblur(yy,skinW,rw,rh,rr);
+    for(let i=0;i<N;i++){
+      const a=s*0.75*skinW[i]; if(a<0.002) continue;
+      const c1=cb[i]+a*(Tcb[i]-cb[i])-128, c2=cr[i]+a*(Tcr[i]-cr[i])-128, y=yy[i]+a*0.3*(Ty[i]-yy[i]);
+      R[i]=y+1.402*c2; G[i]=y-0.344136*c1-0.714136*c2; Bl[i]=y+1.772*c1;
+    }
+  }
+  // 4. Bawah Mata (perlu titik wajah)
+  if(face && eff.eyebag>=0.01){
+    const dx=face[152].x-face[168].x, dy=face[152].y-face[168].y, dl=Math.hypot(dx,dy)||1, ux=dx/dl, uy=dy/dl;
+    const items=[[LM.lidR,33,133],[LM.lidL,263,362]].map(([lid,a,b])=>{
+      const ew=Math.hypot(face[a].x-face[b].x,face[a].y-face[b].y), o1=ew*0.1, o2=ew*0.55;
+      const up=lid.map(i=>[face[i].x-rect.x+ux*o1, face[i].y-rect.y+uy*o1]);
+      const lo=lid.slice().reverse().map(i=>[face[i].x-rect.x+ux*o2, face[i].y-rect.y+uy*o2]);
+      return {pts:up.concat(lo)};
+    });
+    const E=featherF(rast(rw,rh,items),rw,rh,faceW*0.02), s=eff.eyebag;
+    for(let i=0;i<N;i++){
+      const a=s*E[i]; if(a<0.01) continue;
+      const y=Yof(i); if(y>=sY.m) continue;
+      let gain=(y+a*0.8*(sY.m-y))/Math.max(y,1); if(gain>1.7) gain=1.7;
+      const cb=Cbof(i)-128, cr=Crof(i)-128, yn=y*gain;
+      const cb2=cb+a*0.4*(sCb.m-128-cb), cr2=cr+a*0.4*(sCr.m-128-cr);
+      R[i]=yn+1.402*cr2; G[i]=yn-0.344136*cb2-0.714136*cr2; Bl[i]=yn+1.772*cb2;
+    }
+  }
+  // 5. Mata dan Alis: ketajaman (hanya pada luma, agar warna tidak bergeser)
+  if(face && eff.eyes>=0.01){
+    const items=[
+      {pts:sub(LM.eyeR),grow:faceW*0.012},{pts:sub(LM.eyeL),grow:faceW*0.012},
+      {pts:sub(LM.browR),grow:faceW*0.012},{pts:sub(LM.browL),grow:faceW*0.012}];
+    const M=featherF(rast(rw,rh,items),rw,rh,faceW*0.012), s=eff.eyes;
+    const yy=new Float32Array(N); for(let i=0;i<N;i++) yy[i]=Yof(i);
+    const rb=Math.max(1,Math.round(faceW*0.007)), bl=boxMean(boxMean(yy,rw,rh,rb),rw,rh,rb);
+    for(let i=0;i<N;i++){
+      const a=s*1.0*M[i]; if(a<0.01) continue;
+      const d=a*(yy[i]-bl[i]); R[i]+=d; G[i]+=d; Bl[i]+=d;
+    }
+  }
+  // tulis kembali
+  for(let y=0;y<rh;y++){ let o=((y+rect.y)*W+rect.x)*4, k=y*rw; for(let x=0;x<rw;x++,o+=4,k++){ P[o]=R[k]; P[o+1]=G[k]; P[o+2]=Bl[k]; } }
+  return info;
+}
+// Cahaya: atur terang-gelap seluruh orang, lalu angkat bayangan di wajah
+function lightPass(P,W,H,s,info){
+  if(s<0.01) return;
+  const n=W*H, al=snapshot(), hist=new Uint32Array(256), step=Math.max(1,Math.floor(n/150000));
+  let cnt=0;
+  for(let i=0;i<n;i+=step){ if(al[i]<128) continue; const o=i*4; hist[(0.299*P[o]+0.587*P[o+1]+0.114*P[o+2])|0]++; cnt++; }
+  if(cnt<500) return;
+  const pct=q=>{ let a=0; const t=cnt*q; for(let v=0;v<256;v++){ a+=hist[v]; if(a>=t) return v; } return 255; };
+  const lo=pct(0.01), hi=pct(0.99), span=Math.max(60,hi-lo);
+  const mid=info&&info.muY>0?info.muY:pct(0.5);
+  const stretch=v=>{ const t=Math.min(1,Math.max(0,(v-lo)/span)); return v/255+s*0.8*(t-v/255); };
+  const m2=Math.min(0.95,Math.max(0.05,stretch(mid)));
+  let gm=Math.log(0.62)/Math.log(m2); gm=Math.min(1.4,Math.max(0.7,gm));
+  const ge=1+(gm-1)*s*0.8, lut=new Uint8ClampedArray(256);
+  for(let v=0;v<256;v++) lut[v]=Math.pow(Math.max(0,stretch(v)),ge)*255+0.5;
+  for(let i=0;i<n;i++){ const o=i*4; P[o]=lut[P[o]]; P[o+1]=lut[P[o+1]]; P[o+2]=lut[P[o+2]]; }
+  if(info&&info.rect&&info.lw){
+    const rc=info.rect, rw=rc.w, rh=rc.h;
+    for(let y=0;y<rh;y++){ let o=((y+rc.y)*W+rc.x)*4, k=y*rw;
+      for(let x=0;x<rw;x++,o+=4,k++){
+        const w=info.lw[k]; if(w<0.02) continue;
+        const yv=(0.299*P[o]+0.587*P[o+1]+0.114*P[o+2])/255;
+        let gain=1+s*0.45*w*(1-yv)*(1-yv); if(gain>1.5) gain=1.5;
+        P[o]*=gain; P[o+1]*=gain; P[o+2]*=gain;
+      }
+    }
+  }
+}
+function bEff(){ const e={}; BK.forEach(k=>{ e[k]=B.v[k]*B.m/10000; }); return e; }
+async function bBuild(){
+  const W=S.img.width, H=S.img.height;
+  if(!S.imgData) S.imgData=S.img.getContext('2d').getImageData(0,0,W,H).data;
+  const eff=bEff();
+  if(BK.every(k=>eff[k]<0.01)){ S.bpx=null; decontam(); S.cutDirty=true; return {ok:true,none:true}; }
+  const face=await findFace();
+  const P=new Uint8ClampedArray(S.imgData);
+  const need=BK.some(k=>k!=='light'&&eff[k]>=0.01);
+  const info=need?faceEffects(P,W,H,eff,face):{ok:true,noFace:!face};
+  if(!need&&face){ // hanya Cahaya: tetap angkat bayangan di wajah
+    const O=LM.oval.map(i=>face[i]);
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; O.forEach(p=>{ if(p.x<x0)x0=p.x; if(p.x>x1)x1=p.x; if(p.y<y0)y0=p.y; if(p.y>y1)y1=p.y; });
+    const rx=Math.max(0,Math.floor(x0)), ry=Math.max(0,Math.floor(y0)), rw=Math.min(W,Math.ceil(x1))-rx, rh=Math.min(H,Math.ceil(y1))-ry;
+    if(rw>24&&rh>24){
+      const ov=rast(rw,rh,[{pts:LM.oval.map(i=>[face[i].x-rx,face[i].y-ry])}]);
+      info.rect={x:rx,y:ry,w:rw,h:rh}; info.lw=featherF(ov,rw,rh,(x1-x0)*0.03);
+      let m=0,c=0; for(let i=0;i<rw*rh;i+=7) if(ov[i]){ const o=((((i/rw)|0)+ry)*W+(i%rw)+rx)*4; m+=0.299*P[o]+0.587*P[o+1]+0.114*P[o+2]; c++; }
+      info.muY=c?m/c:0;
+    }
+  }
+  if(info.ok===false&&info.note==='noperson') throw new Error('noperson');
+  lightPass(P,W,H,eff.light,info);
+  S.bpx=P; decontam(); S.cutDirty=true;
+  return info;
+}
+function bShow(){
+  BK.forEach(k=>{ $('bs-'+k).value=B.v[k]; $('bv-'+k).textContent=B.v[k]; });
+  $('bMaster').value=B.m; $('bMasterVal').textContent=B.m+'%';
+  updateWarn();
+}
+function updateWarn(info){
+  const hot=BK.some(k=>B.v[k]*B.m/10000>0.6), w=$('bWarn');
+  w.classList.toggle('hot',hot);
+  $('bWarnText').textContent=hot
+    ? 'Hasil sudah terlihat kuat. Untuk pas foto dokumen resmi (CPNS, ijazah, KTP), kurangi kekuatannya.'
+    : 'Untuk pas foto dokumen resmi (CPNS, ijazah, KTP), jangan diedit berlebihan.';
+  w.hidden=B.warnOff&&!hot;
+  const off=B.faceOk===false;
+  ['eyebag','eyes'].forEach(k=>$('brow-'+k).classList.toggle('off',off));
+  $('bNote').textContent=off?'Model wajah belum termuat, jadi Bawah Mata dan Mata dan Alis dilewati. Fitur lain tetap jalan.':'';
+}
+function bState(){ return {v:Object.assign({},B.v), m:B.m}; }
+function bSync(){ $('bUndo').disabled=!B.hist.length; $('bRedo').disabled=!B.redo.length; }
+async function bApply(){
+  if(!S.mask) return;
+  if(B.running){ B.again=true; return; }
+  B.running=true; setBusy(true,'Mempercantik foto…');
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    let info;
+    do{ B.again=false; info=await bBuild(); }while(B.again);
+    updateWarn();
+    if(info&&info.none) say('Semua pengaturan Percantik nol. Foto kembali seperti asli.','ok');
+    else if(info&&info.note==='noskin') say('Kulit wajah tidak terbaca di foto ini. Coba foto yang wajahnya lebih jelas.','err');
+    else say('Selesai. Tahan tombol "Sebelum" untuk membandingkan. Bisa di-Undo.','ok');
+  }catch(e){
+    S.bpx=null; try{ decontam(); }catch(_){}
+    say(e&&e.message==='noperson'?'Orang tidak terdeteksi.':'Gagal mempercantik foto. Coba lagi.','err');
+  }finally{ B.running=false; setBusy(false); requestDraw(); }
+}
+function bChange(mut){
+  const prev=B.last; mut();
+  B.hist.push(prev); if(B.hist.length>20) B.hist.shift();
+  B.redo=[]; B.last=bState(); bShow(); bSync(); bApply();
+}
+(function bBuildUI(){
+  const box=$('bRows');
+  BK.forEach(k=>{
+    const d=document.createElement('div'); d.className='zoomrow'; d.id='brow-'+k;
+    d.innerHTML='<span class="lbl">'+BNAME[k]+'</span><input type="range" id="bs-'+k+'" min="0" max="100" value="0"><span id="bv-'+k+'">0</span>';
+    box.appendChild(d);
+    const r=d.querySelector('input');
+    r.addEventListener('input',e=>{ $('bv-'+k).textContent=e.target.value; });
+    r.addEventListener('change',e=>{ const v=+e.target.value; bChange(()=>{ B.v[k]=v; }); });
+  });
+})();
+$('bMaster').addEventListener('input',e=>{ $('bMasterVal').textContent=e.target.value+'%'; });
+$('bMaster').addEventListener('change',e=>{ const v=+e.target.value; bChange(()=>{ B.m=v; }); });
+$('btnAuto').onclick=()=>{ if(!S.mask||S.busy) return; bChange(()=>{ Object.assign(B.v,BPRESET); B.m=100; }); };
+$('bReset').onclick=()=>{ if(!S.mask||S.busy) return; bChange(()=>{ BK.forEach(k=>{ B.v[k]=0; }); B.m=100; }); };
+$('bUndo').onclick=()=>{ if(!B.hist.length||S.busy) return; B.redo.push(bState()); const st=B.hist.pop(); B.v=st.v; B.m=st.m; B.last=bState(); bShow(); bSync(); bApply(); };
+$('bRedo').onclick=()=>{ if(!B.redo.length||S.busy) return; B.hist.push(bState()); const st=B.redo.pop(); B.v=st.v; B.m=st.m; B.last=bState(); bShow(); bSync(); bApply(); };
+$('bWarnX').onclick=()=>{ B.warnOff=true; updateWarn(); };
+function cmp(on){ if(!S.mask||S.cmp===on) return; S.cmp=on; S.cutDirty=true; requestDraw(); }
+const bc=$('btnCompare');
+bc.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ bc.setPointerCapture(e.pointerId); }catch(_){} cmp(true); });
+['pointerup','pointercancel','pointerleave'].forEach(ev=>bc.addEventListener(ev,()=>cmp(false)));
+bc.addEventListener('contextmenu',e=>e.preventDefault());
+// dipanggil saat foto baru dimuat
+window.__bReset=function(){
+  B.v={skin:0,light:0,shine:0,eyebag:0,tone:0,eyes:0}; B.m=100; B.hist=[]; B.redo=[]; B.last=bState();
+  B.face=undefined; B.faceOk=null; bShow(); bSync();
+};
+
 /* ====== Tombol & acara ====== */
 function syncButtons(){
   $('btnRemove').disabled = !S.img || S.busy || !!S.mask;
@@ -1289,6 +1697,8 @@ function syncButtons(){
   $('colorBox').classList.toggle('locked', !S.mask);
   $('polesLock').hidden = !!S.mask;
   $('polesBox').classList.toggle('locked', !S.mask);
+  $('bLock').hidden = !!S.mask;
+  $('bBox').classList.toggle('locked', !S.mask || S.busy);
   $('btnUndo').disabled = !S.hist.length;
   $('btnRedo').disabled = !S.redo.length;
 }
@@ -1381,7 +1791,7 @@ $('aboutClose').onclick=()=>$('about').close();
 
 window.addEventListener('resize',()=>{ if(S.img) render(); });
 
-buildSwatches(); syncExportUI(); syncProc(); setTool('erase'); setTab('utama');
+buildSwatches(); syncExportUI(); syncProc(); setTool('erase'); bShow(); bSync(); setTab('utama');
 })();
 </script>
 </body>

@@ -10,7 +10,8 @@ Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih
 - Tepi dirapikan mengikuti foto asli, warna sisa latar lama dibuang
 - Warna latar: putih, merah, biru, palet, dan warna bebas
 - Tab **Poles**: Penghapus, Kuas, Ajaib, Blur, Undo/Redo, slider Tepi, lingkaran zoom, Cek Tepi, Bersihkan Sisa Latar, Presisi Tepi (Sedang/Tinggi/Maksimal)
-- Tab **Lainnya**: rasio foto 1x1, 3x4, 4x6 dengan geser dan zoom
+- Tab **Crop**: rasio foto 1x1, 3x4, 4x6 dengan geser dan zoom
+- Tab **Percantik**: tombol Percantik AI, Kulit Mulus, Cahaya, Kilap Minyak, Bawah Mata, Warna Kulit, Mata dan Alis, Sebelum/Sesudah, Undo/Redo/Reset (memakai MediaPipe Face Mesh; berkasnya perlu ada di `lib/` agar offline)
 - Pilihan **Standar** atau **Pembersihan Tingkat Lanjut** (tepi lebih tajam) di beranda
 - Ekspor JPG atau PNG, kualitas maksimal/sedang/rendah dengan estimasi ukuran, nama berkas bisa diubah, dan menu Bagikan
 

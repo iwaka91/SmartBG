@@ -1,4 +1,4 @@
-# Status SmartBG — 28 Oktober 2026
+# Status SmartBG — 29 Oktober 2026
 
 ## Versi 2 (aktif)
 SmartBG v2 diklaim sebagai versi lanjutan. Pengujian versi 1 (React + IMG.LY) dinyatakan **gagal**, sehingga berkasnya dipindah ke `archive/v1-react/` (riwayat Git tetap utuh).
@@ -22,6 +22,9 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - v2.4: menu **Bagikan** di panel Ekspor (WA dan aplikasi lain lewat menu bagikan perangkat; tombol disembunyikan bila peramban tidak mendukung)
 - v2.4: **nama berkas** bisa diubah dengan mengetuknya (bawaan `pasfoto-smartbg`; ekstensi mengikuti format)
 - v2.4: halaman **About** disusun ulang: deskripsi, privasi, teknologi, lisensi, pengembang, tautan totogutomo.com, Saweria (ikon kopi), surel
+- v2.5: urutan tab **Beranda, Poles, Crop, Percantik** (Utama diganti Beranda, Lainnya diganti Crop)
+- v2.5: tab **Percantik**: kotak peringatan yang bisa ditutup (muncul lagi bila kekuatan di atas 60%), tombol **Percantik AI** (takaran natural), slider **Kekuatan**, tombol **Sebelum** (tahan), enam menu (Kulit Mulus, Cahaya, Kilap Minyak, Bawah Mata, Warna Kulit, Mata dan Alis), Undo/Redo/Reset. Tidak ada pengubah bentuk wajah (tirus, besarkan mata) dengan sengaja
+- v2.5: tab Percantik terkunci sampai background dihapus (sama seperti Poles)
 
 ### Hasil uji (28 Okt 2026, MediaPipe asli, peramban headless)
 - Foto pas foto berlatar polos: tepi bersih, tidak ada garis kuning sisa latar
@@ -35,6 +38,11 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 ### Keputusan 28 Okt 2026
 - Rencana model lanjutan (BiRefNet/ONNX) **dibatalkan**: terlalu berat untuk HP dan perlu unduhan besar. Digantikan mode Tingkat Lanjut berbasis MediaPipe yang sama.
 - Uji v2.4 (komputer, MediaPipe asli, 2 foto contoh): tepi setengah transparan berkurang sekitar 35% dibanding Standar, wajah dan rambut utuh. Perbedaannya halus; rambut keriting dan kerudung perlu diuji di HP.
+
+### Percantik: yang masih harus dilakukan (29 Okt 2026)
+- **Berkas model wajah belum ada di `lib/`.** Percantik memakai MediaPipe Face Mesh 0.4.1633559619 (`face_mesh.js`, `face_mesh.binarypb`, `face_mesh_solution_packed_assets.data`, `face_mesh_solution_packed_assets_loader.js`, dan dua pasang `face_mesh_solution_*wasm_bin`). Aplikasi mencoba `lib/` dulu lalu CDN jsdelivr. Tanpa berkas ini dan tanpa internet, **Bawah Mata** dan **Mata dan Alis** dilewati; Kulit Mulus, Cahaya, Kilap Minyak, Warna Kulit tetap jalan (area kulit dikenali dari warna di bagian atas tubuh)
+- Uji komputer (Chromium, foto astronot domain publik): kedua jalur berjalan tanpa galat. Jalur dengan model wajah **hanya diuji dengan titik wajah tiruan**, belum dengan model asli. Perlu uji di HP dengan 3-5 foto nyata
+- Takaran bawaan tombol Percantik AI: kulit 45, cahaya 40, kilap 50, bawah mata 35, warna kulit 40, mata dan alis 30 (bisa disetel ulang setelah uji HP)
 
 ### Belum dikerjakan
 - Fitur jas dan dasi (butuh aset PNG transparan berlisensi atau buatan sendiri)
