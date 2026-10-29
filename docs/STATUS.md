@@ -52,6 +52,13 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Catatan: jas wol dan blazer hitam dipotong di atas saku; blazer hitam punya celah gelap kecil di sisi pinggang (bagian dalam jas)
 - Total aset ±15 MB; berkas ini terpisah dari index.html dan akan masuk bundel APK
 
+### v2.7.01 (29 Okt 2026): perbaikan kecil Atribut setelah uji HP
+- Tubuh lama dibersihkan mengikuti garis atas jas (bahu dan kerah), bukan garis datar. Di luar lebar jas semua di bawah ujung kerah dibersihkan. Kerudung di atas bahu tetap utuh
+- Lubang leher: foto asli hanya tampil sampai "Batas leher" (slider baru, bawaan 45%); di bawahnya diisi warna kemeja jas itu sendiri dengan bayangan halus
+- Garis tipis di wajah (sambungan topeng lama) hilang karena batas datar ditiadakan
+- Dasi: ketuk di luar dasi = 8 titik hilang; dasi tetap bisa digeser; tekan dan tahan dasi (±0,5 detik) untuk memunculkan titik lagi. Tombol "Atur Dasi" juga memunculkan titik
+- Uji komputer (Chromium, foto pramuka dari tangkapan layar): seragam tidak lagi tampil, kerudung utuh. Kerah seragam yang tinggi masih bisa terlihat di sisi kerudung; turunkan Batas leher
+
 ### v2.7 (29 Okt 2026): perbaikan Atribut setelah uji HP (nilai 2/10)
 - Lubang leher jas tidak lagi ditambal warna tebakan (kuning/cokelat/salmon). Tubuh lama hanya disembunyikan di luar lubang leher; di dalam lubang tampil foto asli (leher, kerudung). Bentuk lubang diambil dari gambar jas, jadi potongan mengikuti garis jas
 - Garis peralihan di bawah dagu dipersempit (tidak lagi buram lebar)
