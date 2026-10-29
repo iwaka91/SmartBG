@@ -1,0 +1,112 @@
+[
+ {
+  "id": "jas-01",
+  "berkas": "jas-01.png",
+  "nama": "Jas Abu-abu",
+  "gaya": "jas",
+  "lebar": 1038,
+  "tinggi": 1123,
+  "leherX": 523,
+  "leherV": 204,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-02",
+  "berkas": "jas-02.png",
+  "nama": "Jas Arang, Kemeja Biru",
+  "gaya": "jas",
+  "lebar": 980,
+  "tinggi": 1132,
+  "leherX": 496,
+  "leherV": 233,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-03",
+  "berkas": "jas-03.png",
+  "nama": "Jas Navy",
+  "gaya": "jas",
+  "lebar": 987,
+  "tinggi": 1106,
+  "leherX": 497,
+  "leherV": 219,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-04",
+  "berkas": "jas-04.png",
+  "nama": "Jas Navy Garis, Rompi",
+  "gaya": "jas",
+  "lebar": 1100,
+  "tinggi": 1227,
+  "leherX": 555,
+  "leherV": 165,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-05",
+  "berkas": "jas-05.png",
+  "nama": "Jas Maroon",
+  "gaya": "jas",
+  "lebar": 1051,
+  "tinggi": 1034,
+  "leherX": 533,
+  "leherV": 291,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-06",
+  "berkas": "jas-06.png",
+  "nama": "Jas Cokelat",
+  "gaya": "jas",
+  "lebar": 1055,
+  "tinggi": 1186,
+  "leherX": 532,
+  "leherV": 250,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-07",
+  "berkas": "jas-07.png",
+  "nama": "Jas Hitam Wol",
+  "gaya": "jas",
+  "lebar": 1203,
+  "tinggi": 978,
+  "leherX": 603,
+  "leherV": 179,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-08",
+  "berkas": "jas-08.png",
+  "nama": "Jas Hitam Dobel",
+  "gaya": "jas",
+  "lebar": 1100,
+  "tinggi": 1283,
+  "leherX": 555,
+  "leherV": 181,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-09",
+  "berkas": "jas-09.png",
+  "nama": "Blazer Mauve",
+  "gaya": "blazer",
+  "lebar": 1095,
+  "tinggi": 1206,
+  "leherX": 551,
+  "leherV": 353,
+  "leherLebar": 240
+ },
+ {
+  "id": "jas-10",
+  "berkas": "jas-10.png",
+  "nama": "Blazer Hitam",
+  "gaya": "blazer",
+  "lebar": 1202,
+  "tinggi": 899,
+  "leherX": 609,
+  "leherV": 392,
+  "leherLebar": 240
+ }
+]

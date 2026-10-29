@@ -1,0 +1,112 @@
+[
+ {
+  "id": "dasi-01",
+  "berkas": "dasi-01-hitam-klasik.png",
+  "nama": "Hitam Klasik",
+  "lebar": 162,
+  "tinggi": 442,
+  "simpulX": 81,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-02",
+  "berkas": "dasi-02-hitam-ramping.png",
+  "nama": "Hitam Ramping",
+  "lebar": 117,
+  "tinggi": 513,
+  "simpulX": 58,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-03",
+  "berkas": "dasi-03-hitam-tekstur.png",
+  "nama": "Hitam Bertekstur",
+  "lebar": 200,
+  "tinggi": 397,
+  "simpulX": 100,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-04",
+  "berkas": "dasi-04-kupu-kupu.png",
+  "nama": "Dasi Kupu-kupu",
+  "lebar": 291,
+  "tinggi": 158,
+  "simpulX": 145,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "kupu-kupu"
+ },
+ {
+  "id": "dasi-05",
+  "berkas": "dasi-05-merah.png",
+  "nama": "Merah",
+  "lebar": 149,
+  "tinggi": 445,
+  "simpulX": 74,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-06",
+  "berkas": "dasi-06-biru-tua.png",
+  "nama": "Biru Tua",
+  "lebar": 151,
+  "tinggi": 425,
+  "simpulX": 75,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-07",
+  "berkas": "dasi-07-abu.png",
+  "nama": "Abu-abu",
+  "lebar": 145,
+  "tinggi": 418,
+  "simpulX": 72,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-08",
+  "berkas": "dasi-08-bintik-biru.png",
+  "nama": "Biru Bintik",
+  "lebar": 148,
+  "tinggi": 377,
+  "simpulX": 74,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-09",
+  "berkas": "dasi-09-garis-merah.png",
+  "nama": "Garis Merah",
+  "lebar": 148,
+  "tinggi": 369,
+  "simpulX": 74,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ },
+ {
+  "id": "dasi-10",
+  "berkas": "dasi-10-garis-biru.png",
+  "nama": "Garis Biru",
+  "lebar": 148,
+  "tinggi": 373,
+  "simpulX": 74,
+  "simpulY": 0,
+  "simpulLebar": 100,
+  "jenis": "dasi"
+ }
+]
