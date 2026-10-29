@@ -364,12 +364,16 @@ dialog .btn{margin-top:18px;width:100%}
       <div class="athumbs" id="jasList"><span class="note">Memuat daftar…</span></div>
       <h3>Dasi</h3>
       <div class="athumbs" id="dasiList"></div>
+      <div class="seg" id="aSelSeg" style="margin-bottom:8px">
+        <button data-sel="jas" class="on">Atur Jas</button>
+        <button data-sel="dasi">Atur Dasi</button>
+      </div>
       <div class="zoomrow" id="aSizeRow">
-        <span class="lbl">Ukuran</span>
-        <input type="range" id="aSize" min="50" max="200" value="100">
+        <span class="lbl" id="aSizeLbl">Ukuran jas</span>
+        <input type="range" id="aSize" min="40" max="250" value="100">
         <span id="aSizeVal">100%</span>
       </div>
-      <p class="note">Geser dengan satu jari untuk memindahkan, cubit dengan dua jari untuk memperbesar atau memperkecil. Jas dan dasi bergerak bersama.</p>
+      <p class="note">Ketuk jas atau dasi di foto untuk memilih. Geser satu jari untuk memindahkan, cubit dua jari untuk ukuran. Dasi punya 8 titik: tarik titik sisi untuk membuat dasi kurus, gendut, panjang, atau pendek. Jas dan dasi bergerak sendiri-sendiri.</p>
       <button class="btn block" id="aReset">Atur ulang posisi</button>
       <p class="msg" id="msg4"></p>
     </div>
@@ -380,7 +384,7 @@ dialog .btn{margin-top:18px;width:100%}
 
 <dialog id="about">
   <h2>SmartBG</h2>
-  <p class="ver">Versi 2.6</p>
+  <p class="ver">Versi 2.7</p>
 
   <h4>Deskripsi singkat</h4>
   <p>Aplikasi penghapus latar belakang pas foto. Pilih warna latar (putih, merah, biru, dan lainnya), rapikan tepi, ubah rasio, lalu simpan atau bagikan.</p>
@@ -447,13 +451,15 @@ const S = {
 const A = {
   loaded:false, loading:false, list:{jas:[],dasi:[]}, cache:{},
   jas:null, dasi:null, jasImg:null, dasiImg:null,
-  placed:false, tx:0, ty:0, k:1, k0:1, ver:0, drag:false, hm:null, hm2:null
+  placed:false, tx:0, ty:0, k:1, k0:1, ver:0, drag:false,
+  T:null,          // dasi: x,y = titik simpul (piksel foto), sx,sy = skala lebar/tinggi, s0 = skala awal
+  sel:'jas', act:null, holes:{}, hm:null, hmKey:'', tmp:null
 };
 const A_KGAIN=1.0;   // lebar bukaan leher jas = lebar leher x ini
 const A_TOP=0.15;    // ujung kerah jas di bawah dagu, dalam lebar leher
-const A_TIEK=1.0;    // skala dasi terhadap jas
+const A_TIEK=1.0;    // skala awal dasi terhadap jas
 const A_TIEDY=-6;    // simpul dasi sedikit di atas ujung V (satuan piksel aset)
-const A_VDEF=215;    // letak ujung V bila hanya dasi dipasang (satuan piksel aset)
+const A_VDEF=215;    // letak ujung V bila belum ada jas (satuan piksel aset)
 const OL = { color:null, v:20, field:null, key:'', canvas:null, ck:'' }; // Outline
 const E = { // status tab Poles
   z:1, px:0, py:0, fit:1, cssW:1, cssH:1,
@@ -473,53 +479,65 @@ function composeCut(){
   c.globalCompositeOperation='source-over'; c.clearRect(0,0,W,H);
   c.drawImage(S.cmp?S.img:(S.fg||S.img),0,0);
   c.globalCompositeOperation='destination-in'; c.drawImage(S.mask,0,0);
-  if(A.jas && A.jasImg && A.placed) hideBody(c,W,H);
   c.globalCompositeOperation='source-over';
   S.cutDirty=false;
 }
-/* Jas dipasang: tubuh lama di bawah leher disembunyikan (kecuali lorong leher di bukaan jas) */
-function hideGeom(){
-  const nw=240*A.k, vy=A.ty+A.jas.leherV*A.k;
-  // y1 = ujung kerah (di bawahnya tubuh lama disembunyikan), yn = akhir leher asli di lorong, y2 = ujung V + sedikit
-  return { cx:A.tx, hw:nw*0.62, y1:A.ty, yn:A.ty+nw*0.2, y2:vy+nw*0.2, f:nw*0.07, nw };
-}
-// Warna rata-rata leher tepat di atas batas lorong (dipakai menambal bukaan jas di bawahnya)
-function neckColor(g){
-  const px=S.bpx||S.imgData; if(!px) return null;
-  const W=S.img.width, H=S.img.height; let r=0, gg=0, b=0, n=0;
-  const x0=g.cx-0.2*g.nw, x1=g.cx+0.2*g.nw, y0=g.yn-0.15*g.nw, y1=g.yn;
-  for(let j=0;j<6;j++){
-    const y=Math.round(y0+(y1-y0)*(j+0.5)/6); if(y<0||y>=H) continue;
-    for(let i=0;i<6;i++){
-      const x=Math.round(x0+(x1-x0)*(i+0.5)/6); if(x<0||x>=W) continue;
-      const o=(y*W+x)*4; r+=px[o]; gg+=px[o+1]; b+=px[o+2]; n++;
-    }
+/* Jas dipasang: tubuh lama di bawah kerah disembunyikan, KECUALI di lubang leher jas.
+   Lubang leher tetap menampilkan foto asli (leher, kerudung) tanpa tambalan warna. */
+// Lubang leher jas dari bentuk jas itu sendiri (ukuran aset), sedikit dilebarkan agar tertutup kerah
+function jasHole(item,img){
+  if(A.holes[item.id]) return A.holes[item.id];
+  const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+  const c=mk(w,h), x=c.getContext('2d',{willReadFrequently:true});
+  x.drawImage(img,0,0);
+  const d=x.getImageData(0,0,w,h).data, cx=Math.round(clamp(item.leherX,0,w-1)), dil=4;
+  const o=mk(w,h), ox=o.getContext('2d'); ox.fillStyle='#fff';
+  for(let y=0;y<h;y++){
+    const r=y*w; if(d[(r+cx)*4+3]>=128) break;          // sudah melewati ujung V
+    let l=cx, rr=cx;
+    while(l>0 && d[(r+l-1)*4+3]<128) l--;
+    while(rr<w-1 && d[(r+rr+1)*4+3]<128) rr++;
+    ox.fillRect(l-dil,y,rr-l+1+2*dil,1);
   }
-  return n?[r/n,gg/n,b/n]:null;
+  A.holes[item.id]=o; return o;
 }
-function hideBody(c,W,H){
-  const g=hideGeom(), q=4, w=Math.ceil(W/q), h=Math.ceil(H/q), p=Math.ceil(g.f*3/q)+2, pw=w+2*p, ph=h+2*p;
-  if(!A.hm || A.hm.width!==pw || A.hm.height!==ph){ A.hm=mk(pw,ph); A.hm2=mk(pw,ph); }
-  const m=A.hm.getContext('2d');
-  m.globalCompositeOperation='source-over'; m.clearRect(0,0,pw,ph);
-  m.fillStyle='#fff'; m.fillRect(0,p+g.y1/q,pw,ph);                           // semua di bawah ujung kerah
-  m.globalCompositeOperation='destination-out';
-  m.fillRect(p+(g.cx-g.hw)/q,0,2*g.hw/q,p+g.yn/q);                           // leher asli tetap terlihat sampai yn
+// Topeng "sembunyikan" (resolusi 1/2, koordinat foto), dibuat ulang hanya bila jas bergeser
+function hideMask(){
+  if(!(S.mask && A.placed && A.jas && A.jasImg)) return null;
+  const W=S.img.width, H=S.img.height, q=2, w=Math.ceil(W/q), h=Math.ceil(H/q);
+  const key=[A.jas.id,A.tx.toFixed(1),A.ty.toFixed(1),A.k.toFixed(4),W,H].join('|');
+  if(A.hm && A.hmKey===key) return A.hm;
+  if(!A.hm || A.hm.width!==w || A.hm.height!==h) A.hm=mk(w,h);
+  const m=A.hm.getContext('2d'), k=A.k, f=Math.max(2,0.03*240*k);   // f = lebar peralihan halus di garis kerah
+  m.globalCompositeOperation='source-over'; m.clearRect(0,0,w,h);
+  const y1=A.ty+0.02*240*k, gr=m.createLinearGradient(0,(y1-f)/q,0,(y1+f)/q);
+  gr.addColorStop(0,'rgba(255,255,255,0)'); gr.addColorStop(1,'#fff');
+  m.fillStyle=gr; m.fillRect(0,(y1-f)/q,w,h);
+  m.globalCompositeOperation='destination-out'; m.imageSmoothingEnabled=true;
+  m.drawImage(jasHole(A.jas,A.jasImg),(A.tx-A.jas.leherX*k)/q,A.ty/q,A.jas.lebar*k/q,A.jas.tinggi*k/q);
   m.globalCompositeOperation='source-over';
-  const m2=A.hm2.getContext('2d'); m2.clearRect(0,0,pw,ph);
-  try{ m2.filter='blur('+(g.f/q).toFixed(2)+'px)'; }catch(_){}
-  m2.drawImage(A.hm,0,0); m2.filter='none';
-  c.globalCompositeOperation='destination-out'; c.imageSmoothingEnabled=true;
-  c.drawImage(A.hm2,p,p,w,h,0,0,W,H);
-  // Bukaan jas di bawah leher asli ditambal warna leher (bukan baju lama), sedikit menggelap ke bawah
-  const col=neckColor(g);
-  if(col){
-    const rgb=k=>'rgb('+Math.round(col[0]*k)+','+Math.round(col[1]*k)+','+Math.round(col[2]*k)+')';
-    const gr=c.createLinearGradient(0,g.y1,0,g.y2);
-    gr.addColorStop(0,rgb(1)); gr.addColorStop(1,rgb(0.8));
-    c.globalCompositeOperation='destination-over'; c.fillStyle=gr;
-    c.fillRect(g.cx-g.hw,g.y1,2*g.hw,g.y2-g.y1);
-  }
+  A.hmKey=key; return A.hm;
+}
+// Gambar orang (sudah tanpa background) pada x,y,w,h; tubuh di balik jas disembunyikan
+function drawPerson(ctx,x,y,w,h){
+  const hm=hideMask();
+  if(!hm){ ctx.drawImage(source(),x,y,w,h); return; }
+  const cw=ctx.canvas.width, ch=ctx.canvas.height;
+  if(!A.tmp || A.tmp.width!==cw || A.tmp.height!==ch) A.tmp=mk(cw,ch);
+  const t=A.tmp.getContext('2d');
+  t.setTransform(1,0,0,1,0,0); t.globalCompositeOperation='source-over'; t.clearRect(0,0,cw,ch);
+  t.setTransform(ctx.getTransform());
+  t.imageSmoothingEnabled=true; t.imageSmoothingQuality='high';
+  t.drawImage(source(),x,y,w,h);
+  t.globalCompositeOperation='destination-out'; t.drawImage(hm,x,y,w,h);
+  t.globalCompositeOperation='source-over'; t.setTransform(1,0,0,1,0,0);
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(A.tmp,0,0); ctx.restore();
+}
+// Kotak dasi (koordinat foto): kiri, atas, kanan, bawah
+function tieBox(){
+  const T=A.T, d=A.dasi; if(!T||!d) return null;
+  const l=T.x-d.simpulX*T.sx, t=T.y-d.simpulY*T.sy;
+  return {l, t, r:l+d.lebar*T.sx, b:t+d.tinggi*T.sy};
 }
 // Gambar jas lalu dasi pada koordinat foto (ctx sudah diatur: 1 satuan = 1 piksel foto)
 function drawAttrs(ctx){
@@ -527,10 +545,25 @@ function drawAttrs(ctx){
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   const k=A.k;
   if(A.jas && A.jasImg) ctx.drawImage(A.jasImg, A.tx-A.jas.leherX*k, A.ty, A.jas.lebar*k, A.jas.tinggi*k);
-  if(A.dasi && A.dasiImg){
-    const kt=k*A_TIEK, vy=A.ty+(A.jas?A.jas.leherV:A_VDEF)*k + A_TIEDY*k;
-    ctx.drawImage(A.dasiImg, A.tx-A.dasi.simpulX*kt, vy-A.dasi.simpulY*kt, A.dasi.lebar*kt, A.dasi.tinggi*kt);
-  }
+  const bx=A.dasiImg?tieBox():null;
+  if(bx) ctx.drawImage(A.dasiImg, bx.l, bx.t, bx.r-bx.l, bx.b-bx.t);
+}
+// 8 titik pengatur dasi (hanya di layar, tidak ikut diekspor). m = fungsi foto -> piksel kanvas
+const A_HANDLES=[['nw',0,0],['n',.5,0],['ne',1,0],['e',1,.5],['se',1,1],['s',.5,1],['sw',0,1],['w',0,.5]];
+function drawTieHandles(ctx,m,dpr){
+  if(S.tab!=='atribut' || A.sel!=='dasi') return;
+  const bx=tieBox(); if(!bx) return;
+  const a=m(bx.l,bx.t), b=m(bx.r,bx.b);
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+  ctx.lineWidth=1.5*dpr; ctx.setLineDash([5*dpr,4*dpr]); ctx.strokeStyle='#4f46e5';
+  ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y); ctx.setLineDash([]);
+  const r=6*dpr;
+  A_HANDLES.forEach(([,fx,fy])=>{
+    const x=a.x+(b.x-a.x)*fx, y=a.y+(b.y-a.y)*fy;
+    ctx.fillStyle='#fff'; ctx.strokeStyle='#4f46e5'; ctx.lineWidth=2*dpr;
+    ctx.beginPath(); ctx.rect(x-r,y-r,2*r,2*r); ctx.fill(); ctx.stroke();
+  });
+  ctx.restore();
 }
 function source(){
   if(S.mask){ if(S.cutDirty||!S.cut) composeCut(); return S.cut; }
@@ -575,7 +608,7 @@ function paint(ctx,W,H,fill){
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   const ol=outlineLayer();
   if(ol) ctx.drawImage(ol,p.x,p.y,p.dw,p.dh);
-  ctx.drawImage(source(),p.x,p.y,p.dw,p.dh);
+  drawPerson(ctx,p.x,p.y,p.dw,p.dh);
   if(S.mask && A.placed && (A.jas||A.dasi)){
     ctx.save(); ctx.translate(p.x,p.y); ctx.scale(S.zoom,S.zoom); drawAttrs(ctx); ctx.restore();
   }
@@ -585,6 +618,10 @@ function renderFrame(){
   const f=fitCanvas(W,H);
   vctx.setTransform(f.pw/W,0,0,f.ph/H,0,0);
   paint(vctx,W,H,S.bg);
+  if(S.tab==='atribut'){
+    const p=placement(W,H), sx=f.pw/W, sy=f.ph/H;
+    drawTieHandles(vctx,(x,y)=>({x:(p.x+x*S.zoom)*sx, y:(p.y+y*S.zoom)*sy}), f.pw/f.cssW);
+  }
   $('badge').textContent = S.mask ? 'Tanpa background' : 'Foto asli';
   scheduleEstimate();
 }
@@ -600,7 +637,6 @@ function renderEdit(){
   clampPan();
   const dpr=f.pw/f.cssW, s=E.fit*E.z*dpr;
   const tx=(E.cssW/2+E.px)*dpr - W/2*s, ty=(E.cssH/2+E.py)*dpr - H/2*s;
-  const cut=source();
   vctx.setTransform(1,0,0,1,0,0); vctx.clearRect(0,0,f.pw,f.ph);
   const bgc=E.check?'#00e060':S.bg;
   if(bgc){ vctx.fillStyle=bgc; vctx.fillRect(0,0,f.pw,f.ph); }
@@ -611,7 +647,7 @@ function renderEdit(){
   if(E.tool==='brush' || (E.tool==='magic' && E.mode==='restore')){
     vctx.globalAlpha=0.22; vctx.drawImage(S.img,0,0); vctx.globalAlpha=1;
   }
-  vctx.drawImage(cut,0,0);
+  drawPerson(vctx,0,0,W,H);
   drawAttrs(vctx);
   if(E.cursor){
     const r=view.getBoundingClientRect();
@@ -1447,13 +1483,20 @@ view.addEventListener('pointerdown',e=>{
   e.preventDefault();
   try{ view.setPointerCapture(e.pointerId); }catch(_){}
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(t==='atribut') A.drag=true;
+  if(t==='atribut'){
+    A.drag=true;
+    if(pts.size===1){ A.act=aHit(e.clientX,e.clientY); if(A.act) aSetSel(A.act.target); }
+  }
   if(pts.size===2){
     if(t==='poles') cancelStroke();
     const r=view.getBoundingClientRect(), m=mid();
     pinch0={d:dist(), z:(t==='poles'?E.z:S.zoom),
       ix:(m.x-r.left-E.cssW/2-E.px)/(E.fit*E.z), iy:(m.y-r.top-E.cssH/2-E.py)/(E.fit*E.z)};
-    if(t==='atribut'){ const pm=clientToPhoto(m.x,m.y); pinch0.a={tx:A.tx, ty:A.ty, k:A.k, mx:pm.x, my:pm.y}; }
+    if(t==='atribut'){
+      const pm=clientToPhoto(m.x,m.y); A.act=null;
+      pinch0.a={tx:A.tx, ty:A.ty, k:A.k, mx:pm.x, my:pm.y,
+        tie:(A.sel==='dasi'&&A.T)?{x:A.T.x, y:A.T.y, sx:A.T.sx, sy:A.T.sy, s:tieScale()}:null};
+    }
   }else if(pts.size===1 && t==='poles'){
     beginStroke(e.clientX,e.clientY);
   }
@@ -1474,7 +1517,10 @@ view.addEventListener('pointermove',e=>{
     }else setZoom(pinch0.z*dist()/pinch0.d);
   }else if(pts.size===1){
     if(S.tab==='lainnya'){ S.offX+=dx/view.clientWidth; S.offY+=dy/view.clientHeight; render(); }
-    else if(S.tab==='atribut'){ aMove(dx,dy); }
+    else if(S.tab==='atribut'){
+      if(A.act && A.act.handle) aHandleMove(e.clientX,e.clientY);
+      else if(A.act) aMove(dx,dy);
+    }
     else if(stroke) moveStroke(e.clientX,e.clientY);
   }
 });
@@ -1483,7 +1529,7 @@ function pointerEnd(e){
   pts.delete(e.pointerId);
   if(stroke && pts.size===0){ if(e.type==='pointercancel') cancelStroke(); else endStroke(); }
   if(pts.size<2) pinch0=null;
-  if(pts.size===0 && A.drag){ A.drag=false; requestDraw(); } // Atribut: Outline dihitung ulang setelah jari dilepas
+  if(pts.size===0 && A.drag){ A.drag=false; A.act=null; requestDraw(); } // Atribut: Outline dihitung ulang setelah jari dilepas
 }
 view.addEventListener('pointerup',pointerEnd);
 view.addEventListener('pointercancel',pointerEnd);
@@ -1494,8 +1540,14 @@ view.addEventListener('wheel',e=>{
   else if(S.tab==='poles' && S.mask){ e.preventDefault(); E.z=clamp(E.z*f,1,8); requestDraw(); }
   else if(S.tab==='atribut' && aActive()){
     e.preventDefault();
-    const pm=clientToPhoto(e.clientX,e.clientY), k=clamp(A.k*f,A.k0*0.4,A.k0*3), rr=k/A.k;
-    A.k=k; A.tx=pm.x+(A.tx-pm.x)*rr; A.ty=pm.y+(A.ty-pm.y)*rr;
+    const pm=clientToPhoto(e.clientX,e.clientY);
+    if(A.sel==='dasi' && A.T){
+      const T=A.T, s=tieScale(), s2=clamp(s*f,T.s0*0.3,T.s0*4), rr=s2/s;
+      T.sx*=rr; T.sy*=rr; T.x=pm.x+(T.x-pm.x)*rr; T.y=pm.y+(T.y-pm.y)*rr;
+    }else{
+      const k=clamp(A.k*f,A.k0*0.4,A.k0*3), rr=k/A.k;
+      A.k=k; A.tx=pm.x+(A.tx-pm.x)*rr; A.ty=pm.y+(A.ty-pm.y)*rr;
+    }
     aChanged();
   }
 },{passive:false});
@@ -1997,7 +2049,7 @@ function olSilhouette(){
   const W=S.img.width, H=S.img.height;
   if(!(A.placed && (A.jas||A.dasi))) return snapshot();
   const c=mk(W,H), x=c.getContext('2d',{willReadFrequently:true});
-  x.drawImage(source(),0,0); drawAttrs(x);
+  drawPerson(x,0,0,W,H); drawAttrs(x);
   const d=x.getImageData(0,0,W,H).data, a=new Uint8Array(W*H);
   for(let i=0,j=3;i<a.length;i++,j+=4) a[i]=d[j];
   return a;
@@ -2093,27 +2145,78 @@ function clientToPhoto(cx,cy){ // titik layar -> koordinat piksel foto
   const {W,H}=frameDims(), r=view.getBoundingClientRect(), p=placement(W,H);
   return { x:((cx-r.left)*W/r.width-p.x)/S.zoom, y:((cy-r.top)*H/r.height-p.y)/S.zoom };
 }
+function tieScale(){ const T=A.T; return T?Math.sqrt(T.sx*T.sy):1; }
 function syncASize(){
-  const p=clamp(Math.round(A.k/A.k0*100),50,200);
+  const tie=A.sel==='dasi';
+  const p=clamp(Math.round(tie?(A.T?tieScale()/A.T.s0*100:100):A.k/A.k0*100),40,250);
   $('aSize').value=p; $('aSizeVal').textContent=p+'%';
+  $('aSizeLbl').textContent=tie?'Ukuran dasi':'Ukuran jas';
+  document.querySelectorAll('#aSelSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sel===A.sel));
 }
+function aSetSel(t){ if(A.sel===t) return; A.sel=t; syncASize(); requestDraw(); }
 function aChanged(){
   if(S.img){
     const W=S.img.width, H=S.img.height;
     A.tx=clamp(A.tx,-0.5*W,1.5*W); A.ty=clamp(A.ty,-0.5*H,1.5*H);
+    if(A.T){ A.T.x=clamp(A.T.x,-0.5*W,1.5*W); A.T.y=clamp(A.T.y,-0.5*H,1.5*H); }
   }
-  A.ver++; S.cutDirty=true; syncASize(); requestDraw();
+  A.ver++; syncASize(); requestDraw();  // potongan foto tidak dihitung ulang: lebih ringan saat digeser
 }
+function pxPerClient(){ const {W}=frameDims(); return (W/view.clientWidth)/S.zoom; }
 function aMove(dx,dy){
-  const {W,H}=frameDims();
-  A.tx+=dx*(W/view.clientWidth)/S.zoom; A.ty+=dy*(H/view.clientHeight)/S.zoom;
+  const u=pxPerClient();
+  if(A.act && A.act.target==='dasi' && A.T){ A.T.x+=dx*u; A.T.y+=dy*u; }
+  else { A.tx+=dx*u; A.ty+=dy*u; }
   aChanged();
 }
 function aPinch(){
-  const a=pinch0.a, m=mid(), pm=clientToPhoto(m.x,m.y);
-  const k=clamp(a.k*dist()/pinch0.d, A.k0*0.4, A.k0*3), rr=k/a.k;
-  A.k=k; A.tx=pm.x+(a.tx-a.mx)*rr; A.ty=pm.y+(a.ty-a.my)*rr;
+  const a=pinch0.a, m=mid(), pm=clientToPhoto(m.x,m.y), f=dist()/pinch0.d;
+  if(a.tie){
+    const T=A.T, s=clamp(a.tie.s*f,T.s0*0.3,T.s0*4), rr=s/a.tie.s;
+    T.sx=a.tie.sx*rr; T.sy=a.tie.sy*rr;
+    T.x=pm.x+(a.tie.x-a.mx)*rr; T.y=pm.y+(a.tie.y-a.my)*rr;
+  }else{
+    const k=clamp(a.k*f, A.k0*0.4, A.k0*3), rr=k/a.k;
+    A.k=k; A.tx=pm.x+(a.tx-a.mx)*rr; A.ty=pm.y+(a.ty-a.my)*rr;
+  }
   aChanged();
+}
+// Ketukan pertama: titik pengatur dasi? badan dasi? selain itu jas
+function aHit(cx,cy){
+  const pm=clientToPhoto(cx,cy), u=pxPerClient(), bx=(A.dasiImg&&A.T)?tieBox():null;
+  if(bx && A.sel==='dasi'){
+    const rad=22*u; let best=null, bd=rad;
+    A_HANDLES.forEach(([id,fx,fy])=>{
+      const d=Math.hypot(pm.x-(bx.l+(bx.r-bx.l)*fx), pm.y-(bx.t+(bx.b-bx.t)*fy));
+      if(d<=bd){ bd=d; best=id; }
+    });
+    if(best) return {target:'dasi', handle:best, box:{...bx}, px:pm.x, py:pm.y};
+  }
+  if(bx){
+    const pad=10*u;
+    if(pm.x>=bx.l-pad && pm.x<=bx.r+pad && pm.y>=bx.t-pad && pm.y<=bx.b+pad) return {target:'dasi'};
+  }
+  if(A.jas && A.jasImg) return {target:'jas'};
+  return bx?{target:'dasi'}:null;
+}
+// Menarik salah satu dari 8 titik: lebar dan tinggi bebas (tidak harus sebanding)
+function aHandleMove(cx,cy){
+  const a=A.act, T=A.T, d=A.dasi; if(!a||!T||!d) return;
+  const pm=clientToPhoto(cx,cy), dx=pm.x-a.px, dy=pm.y-a.py, b={...a.box}, h=a.handle;
+  const minW=d.lebar*T.s0*0.25, minH=d.tinggi*T.s0*0.25;
+  if(h.includes('w')) b.l=Math.min(a.box.l+dx, b.r-minW);
+  if(h.includes('e')) b.r=Math.max(a.box.r+dx, b.l+minW);
+  if(h.includes('n')) b.t=Math.min(a.box.t+dy, b.b-minH);
+  if(h.includes('s')) b.b=Math.max(a.box.b+dy, b.t+minH);
+  T.sx=(b.r-b.l)/d.lebar; T.sy=(b.b-b.t)/d.tinggi;
+  T.x=b.l+d.simpulX*T.sx; T.y=b.t+d.simpulY*T.sy;
+  aChanged();
+}
+// Letak awal dasi: di ujung V jas bila ada, bila tidak di bawah leher
+function aTieDefault(){
+  const k=A.k*A_TIEK;
+  const vy=A.ty+((A.jas?A.jas.leherV:A_VDEF)+A_TIEDY)*A.k;
+  A.T={x:A.tx, y:vy, sx:k, sy:k, s0:k};
 }
 // Lebar bagian orang pada satu baris, di sekitar titik cx
 function runWidth(al,W,H,y,cx,search){
@@ -2224,21 +2327,34 @@ async function aSelect(kind,item){
       const img=await aImg(A_BASE[kind]+item.berkas);
       if(!A.placed){ $('busyText').textContent='Mencari posisi dagu dan leher…'; await aPlace(); }
       A[kind]=item; A[kind+'Img']=img;
-    }else{ A[kind]=null; A[kind+'Img']=null; }
+      if(kind==='dasi' && !A.T) aTieDefault();
+      A.sel=kind;
+    }else{
+      A[kind]=null; A[kind+'Img']=null;
+      if(kind==='dasi') A.T=null;
+      A.sel=(kind==='jas'&&A.dasi)?'dasi':'jas';
+    }
     aMarkThumbs(); aChanged();
-    say(item?'Terpasang. Geser dengan satu jari, cubit untuk mengubah ukuran.':'', item?'ok':'');
+    say(item?(kind==='dasi'?'Dasi terpasang. Tarik 8 titik di sekeliling dasi untuk mengubah bentuk.':'Jas terpasang. Geser dengan satu jari, cubit untuk mengubah ukuran.'):'', item?'ok':'');
   }catch(e){ say('Gambar gagal dimuat. Periksa koneksi lalu coba lagi.','err'); }
   finally{ setBusy(false); }
 }
 function aResetAll(){ // foto baru: atribut dikosongkan
-  A.jas=A.dasi=null; A.jasImg=A.dasiImg=null; A.placed=false; A.drag=false; A.hm=A.hm2=null; A.k=A.k0=1; A.ver++;
+  A.jas=A.dasi=null; A.jasImg=A.dasiImg=null; A.placed=false; A.drag=false; A.hm=null; A.hmKey=''; A.T=null; A.sel='jas'; A.act=null; A.k=A.k0=1; A.ver++;
   aMarkThumbs(); syncASize();
 }
-$('aSize').addEventListener('input',e=>{ if(!aActive()) return; A.k=A.k0*(+e.target.value)/100; aChanged(); });
+$('aSize').addEventListener('input',e=>{
+  if(!aActive()) return;
+  const v=+e.target.value/100;
+  if(A.sel==='dasi' && A.T){ const f=v*A.T.s0/tieScale(); A.T.sx*=f; A.T.sy*=f; }
+  else A.k=A.k0*v;
+  aChanged();
+});
+document.querySelectorAll('#aSelSeg button').forEach(b=>b.onclick=()=>aSetSel(b.dataset.sel));
 $('aReset').onclick=async()=>{
   if(!S.mask||S.busy||!A.placed) return;
   setBusy(true,'Mengatur ulang posisi…');
-  try{ await aPlace(); aChanged(); say('Posisi diatur ulang otomatis.','ok'); }
+  try{ await aPlace(); if(A.dasi) aTieDefault(); aChanged(); say('Posisi jas dan dasi diatur ulang otomatis.','ok'); }
   catch(e){ say('Gagal mengatur ulang posisi.','err'); }
   finally{ setBusy(false); }
 };

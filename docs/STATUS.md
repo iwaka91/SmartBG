@@ -52,6 +52,16 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Catatan: jas wol dan blazer hitam dipotong di atas saku; blazer hitam punya celah gelap kecil di sisi pinggang (bagian dalam jas)
 - Total aset ±15 MB; berkas ini terpisah dari index.html dan akan masuk bundel APK
 
+### v2.7 (29 Okt 2026): perbaikan Atribut setelah uji HP (nilai 2/10)
+- Lubang leher jas tidak lagi ditambal warna tebakan (kuning/cokelat/salmon). Tubuh lama hanya disembunyikan di luar lubang leher; di dalam lubang tampil foto asli (leher, kerudung). Bentuk lubang diambil dari gambar jas, jadi potongan mengikuti garis jas
+- Garis peralihan di bawah dagu dipersempit (tidak lagi buram lebar)
+- 10 berkas jas dibersihkan: sisa titik putih/kotak-kotak di tepi bahu dibuang, tepi dihaluskan, lubang kecil ditutup
+- Dasi berdiri sendiri: tetap ada saat jas "Tanpa", bisa dipasang tanpa jas, digeser terpisah
+- Dasi punya 8 titik pengatur (sudut dan sisi): lebar dan tinggi bebas, tidak harus sebanding
+- Pilihan "Atur Jas / Atur Dasi" (juga dengan mengetuk di foto); slider Ukuran dan cubit mengikuti pilihan
+- Lebih ringan: potongan foto tidak dihitung ulang saat menggeser; topeng sembunyi hanya dibuat ulang saat jas bergeser (uji komputer ±10 ms per gambar)
+- Uji komputer (Chromium, tangkapan layar uji): jas, dasi, tarik titik, jas dimatikan dasi tetap, tanpa galat. Belum diuji di HP
+
 ### Belum dikerjakan
 - Uji di HP dengan foto nyata (Atribut, Koreksi Bias, Outline, Face Mesh asli)
 - Pembungkusan APK
