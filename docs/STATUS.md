@@ -1,4 +1,6 @@
-# Status SmartBG — 29 Oktober 2026
+# Status SmartBG — 30 Oktober 2026
+
+**Versi saat ini: 2.7.1 (final candidate, versi stabil).** Fitur Atribut dihapus; lihat bagian v2.7.1.
 
 ## Versi 2 (aktif)
 SmartBG v2 diklaim sebagai versi lanjutan. Pengujian versi 1 (React + IMG.LY) dinyatakan **gagal**, sehingga berkasnya dipindah ke `archive/v1-react/` (riwayat Git tetap utuh).
@@ -44,7 +46,14 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Uji komputer (Chromium, foto astronot domain publik): kedua jalur berjalan tanpa galat. Jalur dengan model wajah **hanya diuji dengan titik wajah tiruan**, belum dengan model asli. Perlu uji di HP dengan 3-5 foto nyata
 - Takaran bawaan tombol Percantik AI: kulit 45, cahaya 40, kilap 50, bawah mata 35, warna kulit 40, mata dan alis 30 (bisa disetel ulang setelah uji HP)
 
-### Aset Atribut (29 Okt 2026)
+### v2.7.1 (30 Okt 2026): versi stabil, final candidate
+- **Tab Atribut (jas dan dasi) dihapus.** Alasan: setelah beberapa putaran perbaikan, hasil pada foto nyata masih menyisakan celah dan titik warna latar di sekitar kerah (mis. titik merah pada 9 dari 10 jas), karena jas statis ditempel pada leher dan bahu yang selalu berbeda. Usaha tidak sepadan dengan hasil; alat AI lain lebih rapi untuk kebutuhan ganti pakaian.
+- Kode jas/dasi, 10 jas, 10 dasi, dan pengatur 8 titik dibuang dari `index.html` dan folder `assets/`. Tab sekarang: Beranda, Poles, Crop, Percantik. Outline, Koreksi Bias, dan fitur lain tidak berubah.
+- **Arsip**: versi lengkap dengan Atribut (v2.7.02) tersimpan di cabang `arsip/atribut-v2.7.02` (commit 22b67ba). Untuk memulihkan: `git checkout arsip/atribut-v2.7.02`.
+- Catatan: tag Git ditolak server saat dibuat dari sesi ini (403), jadi arsip memakai cabang.
+- Bagian "Aset Atribut", v2.7, v2.7.01, v2.7.02 di bawah dipertahankan sebagai riwayat.
+
+### Aset Atribut (29 Okt 2026) — riwayat, sudah diarsipkan
 - `assets/jas/`: 10 jas PNG transparan (6 jas pria, 2 jas hitam, 2 blazer wanita) + `jas.json`. Hasil generasi AI (aman lisensi). Bagian dalam/kerah belakang dan lubang leher sudah dihapus agar jas bisa menjadi lapisan atas foto; kerah depan, bahu, dan kancing utuh
 - Semua jas diseragamkan: lebar bukaan leher 240 px. `jas.json` berisi `leherX` (tengah leher), `leherV` (titik V paling bawah, tempat dasi dipasang), `leherLebar`, lebar dan tinggi berkas
 - `assets/dasi/`: 10 dasi PNG transparan (termasuk kupu-kupu) + `dasi.json` (`simpulX`, `simpulY` = titik atas tengah, `simpulLebar` = 100 px). Logo dan tali sudah dibuang
@@ -77,7 +86,7 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Uji komputer (Chromium, tangkapan layar uji): jas, dasi, tarik titik, jas dimatikan dasi tetap, tanpa galat. Belum diuji di HP
 
 ### Belum dikerjakan
-- Uji di HP dengan foto nyata (Atribut, Koreksi Bias, Outline, Face Mesh asli)
+- Uji di HP dengan foto nyata (Koreksi Bias, Outline, Face Mesh asli)
 - Pembungkusan APK
 
 ### Catatan perubahan repo
