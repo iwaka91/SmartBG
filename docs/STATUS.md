@@ -61,7 +61,7 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 ### v2.7.1 (30 Okt 2026): versi stabil, final candidate
 - **Tab Atribut (jas dan dasi) dihapus.** Alasan: setelah beberapa putaran perbaikan, hasil pada foto nyata masih menyisakan celah dan titik warna latar di sekitar kerah (mis. titik merah pada 9 dari 10 jas), karena jas statis ditempel pada leher dan bahu yang selalu berbeda. Usaha tidak sepadan dengan hasil; alat AI lain lebih rapi untuk kebutuhan ganti pakaian.
 - Kode jas/dasi, 10 jas, 10 dasi, dan pengatur 8 titik dibuang dari `index.html` dan folder `assets/`. Tab sekarang: Beranda, Poles, Crop, Percantik. Outline, Koreksi Bias, dan fitur lain tidak berubah.
-- **Arsip**: versi lengkap dengan Atribut (v2.7.02) tersimpan di cabang `arsip/atribut-v2.7.02` (commit 22b67ba). Untuk memulihkan: `git checkout arsip/atribut-v2.7.02`.
+- **Arsip**: versi lengkap dengan Atribut (v2.7.02) tersimpan di cabang `arsip/atribut-v2.7.02` (commit 22b67ba). Untuk memulihkan: `git checkout 22b67ba` (commit ini ada di riwayat main; cabang `arsip/atribut-v2.7.02` hanya penunjuk ke commit yang sama).
 - Catatan: tag Git ditolak server saat dibuat dari sesi ini (403), jadi arsip memakai cabang.
 - Bagian "Aset Atribut", v2.7, v2.7.01, v2.7.02 di bawah dipertahankan sebagai riwayat.
 

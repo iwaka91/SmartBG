@@ -12,5 +12,5 @@ Hak cipta Google LLC dan kontributor MediaPipe. Teks lisensi: `lib/LICENSE-Media
 ## Arsip versi 1
 Folder `archive/` berisi kode versi 1 (React) yang sudah tidak dipakai, hanya untuk riwayat. Kode itu bergantung pada pustaka pihak ketiga (React, Vite, Tailwind, lucide-react, dan `@imgly/background-removal`) yang masing-masing punya lisensi sendiri. Pustaka itu tidak disertakan di repo; periksa lisensinya sebelum membangun ulang versi 1.
 
-## Cabang arsip
-Cabang `arsip/atribut-v2.7.02` memuat fitur Atribut lama (gambar jas dan dasi buatan AI). Gambar-gambar itu tidak termasuk lisensi MIT repo ini tanpa pemeriksaan ulang oleh pemilik.
+## Riwayat fitur Atribut
+Riwayat commit (sampai commit `22b67ba`, juga di cabang `arsip/atribut-v2.7.02` bila masih ada) memuat fitur Atribut lama (gambar jas dan dasi buatan AI). Gambar-gambar itu tidak termasuk lisensi MIT repo ini tanpa pemeriksaan ulang oleh pemilik.
