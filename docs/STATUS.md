@@ -1,4 +1,4 @@
-# Status SmartBG — 30 Oktober 2026
+# Status SmartBG — 5 November 2026
 
 **Versi saat ini: 2.7.2 (PWA, bisa dipasang dan 100% offline).** Dasar: v2.7.1 (final candidate, Atribut dihapus).
 
@@ -54,6 +54,8 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Uji komputer (Chromium, localhost): cache terisi 23 berkas; muat ulang tanpa internet berhasil; hapus background dan Percantik AI jalan offline tanpa permintaan ke luar dan tanpa galat. Belum diuji di HP dan di HTTPS Netlify
 - Ukuran simpan di HP ±33 MB (unduhan pertama sebaiknya lewat Wi-Fi). Setiap rilis berikutnya: naikkan `VERSI` di sw.js
 - Kalau dibungkus APK, service worker tidak diperlukan (berkas sudah di dalam APK)
+- **Deploy**: belum ada situs Netlify untuk SmartBG (dicek 5 Nov 2026, 26 situs lain ada). Deploy dari sesi Claude ditolak jaringan (403), jadi dilakukan manual: Netlify > Add new site > Import from Git > `iwaka91/smartbg`, cabang `main`, tanpa build command, publish directory `.`. Setelah itu pasang domain `smartbg.totogutomo.com` bila diinginkan
+- Langkah berikutnya: uji di HP (Pasang, mode pesawat, Percantik offline), lalu bungkus APK bila perlu
 
 ### v2.7.1 (30 Okt 2026): versi stabil, final candidate
 - **Tab Atribut (jas dan dasi) dihapus.** Alasan: setelah beberapa putaran perbaikan, hasil pada foto nyata masih menyisakan celah dan titik warna latar di sekitar kerah (mis. titik merah pada 9 dari 10 jas), karena jas statis ditempel pada leher dan bahu yang selalu berbeda. Usaha tidak sepadan dengan hasil; alat AI lain lebih rapi untuk kebutuhan ganti pakaian.
