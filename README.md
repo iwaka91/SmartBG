@@ -14,11 +14,13 @@ Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih
 - Tab **Percantik**: tombol Percantik AI, Kulit Mulus, Cahaya, Kilap Minyak, Bawah Mata, Warna Kulit, Mata dan Alis, Sebelum/Sesudah, Undo/Redo/Reset (memakai MediaPipe Face Mesh; berkasnya perlu ada di `lib/` agar offline)
 - Tab **Poles** juga memuat **Koreksi Bias Latar Belakang** (kulit saja) dan **Outline** (putih/palet, tebal bisa diatur)
 - Pilihan **Standar** atau **Pembersihan Tingkat Lanjut** (tepi lebih tajam) di beranda
+- **PWA**: bisa dipasang ke layar utama (tombol Pasang di Beranda) dan dipakai penuh tanpa internet
 - Ekspor JPG atau PNG, kualitas maksimal/sedang/rendah dengan estimasi ukuran, nama berkas bisa diubah, dan menu Bagikan
 
 ## Struktur
 - `index.html` — seluruh aplikasi (satu berkas)
-- `lib/` — MediaPipe selfie_segmentation 0.1.1675465747 (Apache-2.0), dimuat lebih dulu sebelum CDN
+- `lib/` — MediaPipe selfie_segmentation 0.1.1675465747 dan face_mesh 0.4.1633559619 (Apache-2.0), dimuat lebih dulu sebelum CDN
+- `manifest.webmanifest`, `sw.js`, `icons/` — PWA (pasang dan offline). Ganti `VERSI` di `sw.js` setiap berkas aplikasi berubah
 - `docs/STATUS.md` — laporan status
 - `archive/` — arsip versi lama
 - Fitur Atribut (jas dan dasi) dihapus di v2.7.1; versi lengkapnya tersimpan di cabang `arsip/atribut-v2.7.02`

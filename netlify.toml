@@ -1,3 +1,18 @@
 # SmartBG v2: aplikasi statis (satu index.html + folder lib/), tanpa proses build.
 [build]
   publish = "."
+
+# PWA: sw.js dan manifest tidak boleh tertahan di cache peramban agar pembaruan cepat sampai
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "no-cache"

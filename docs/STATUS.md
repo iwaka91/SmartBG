@@ -1,6 +1,6 @@
 # Status SmartBG — 30 Oktober 2026
 
-**Versi saat ini: 2.7.1 (final candidate, versi stabil).** Fitur Atribut dihapus; lihat bagian v2.7.1.
+**Versi saat ini: 2.7.2 (PWA, bisa dipasang dan 100% offline).** Dasar: v2.7.1 (final candidate, Atribut dihapus).
 
 ## Versi 2 (aktif)
 SmartBG v2 diklaim sebagai versi lanjutan. Pengujian versi 1 (React + IMG.LY) dinyatakan **gagal**, sehingga berkasnya dipindah ke `archive/v1-react/` (riwayat Git tetap utuh).
@@ -45,6 +45,15 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - **Berkas model wajah belum ada di `lib/`.** Percantik memakai MediaPipe Face Mesh 0.4.1633559619 (`face_mesh.js`, `face_mesh.binarypb`, `face_mesh_solution_packed_assets.data`, `face_mesh_solution_packed_assets_loader.js`, dan dua pasang `face_mesh_solution_*wasm_bin`). Aplikasi mencoba `lib/` dulu lalu CDN jsdelivr. Tanpa berkas ini dan tanpa internet, **Bawah Mata** dan **Mata dan Alis** dilewati; Kulit Mulus, Cahaya, Kilap Minyak, Warna Kulit tetap jalan (area kulit dikenali dari warna di bagian atas tubuh)
 - Uji komputer (Chromium, foto astronot domain publik): kedua jalur berjalan tanpa galat. Jalur dengan model wajah **hanya diuji dengan titik wajah tiruan**, belum dengan model asli. Perlu uji di HP dengan 3-5 foto nyata
 - Takaran bawaan tombol Percantik AI: kulit 45, cahaya 40, kilap 50, bawah mata 35, warna kulit 40, mata dan alis 30 (bisa disetel ulang setelah uji HP)
+
+### v2.7.2 (5 Nov 2026): PWA, pasang ke layar utama dan 100% offline
+- Berkas Face Mesh 0.4.1633559619 (8 berkas, ±21 MB, dikirim pengguna) masuk `lib/`; Percantik penuh kini jalan tanpa internet
+- Baru: `manifest.webmanifest`, `sw.js` (menyimpan 23 berkas: aplikasi, ikon, MediaPipe), `icons/` (192, 512, maskable, apple-touch)
+- Tombol **Pasang** di Beranda (muncul di Chrome Android bila bisa dipasang, hilang setelah terpasang); iPhone mendapat petunjuk "Bagikan, Tambah ke Layar Utama"
+- `netlify.toml`: sw.js, index.html, manifest tidak di-cache peramban agar pembaruan cepat sampai
+- Uji komputer (Chromium, localhost): cache terisi 23 berkas; muat ulang tanpa internet berhasil; hapus background dan Percantik AI jalan offline tanpa permintaan ke luar dan tanpa galat. Belum diuji di HP dan di HTTPS Netlify
+- Ukuran simpan di HP ±33 MB (unduhan pertama sebaiknya lewat Wi-Fi). Setiap rilis berikutnya: naikkan `VERSI` di sw.js
+- Kalau dibungkus APK, service worker tidak diperlukan (berkas sudah di dalam APK)
 
 ### v2.7.1 (30 Okt 2026): versi stabil, final candidate
 - **Tab Atribut (jas dan dasi) dihapus.** Alasan: setelah beberapa putaran perbaikan, hasil pada foto nyata masih menyisakan celah dan titik warna latar di sekitar kerah (mis. titik merah pada 9 dari 10 jas), karena jas statis ditempel pada leher dan bahu yang selalu berbeda. Usaha tidak sepadan dengan hasil; alat AI lain lebih rapi untuk kebutuhan ganti pakaian.
