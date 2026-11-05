@@ -28,4 +28,9 @@ Aplikasi web untuk menghapus latar belakang pas foto, memilih warna latar (putih
 ## Menjalankan
 Berkas harus dibuka lewat server (bukan klik ganda), mis. `python3 -m http.server`, lalu buka `http://localhost:8000`. Untuk APK, `index.html` dan `lib/` dibungkus bersama agar bisa offline.
 
+## Lisensi
+Kode SmartBG berlisensi **MIT** (`LICENSE`): boleh dipakai, diubah, dan dibagikan dengan mencantumkan hak cipta. Pustaka MediaPipe di `lib/` berlisensi Apache 2.0 milik Google, lihat `NOTICE.md`.
+
+Aplikasi berjalan di https://smartbg.totogutomo.com
+
 SmartBG ©2026 | totogutomo.com

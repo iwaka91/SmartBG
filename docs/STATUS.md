@@ -55,6 +55,7 @@ Tujuan sama: pas foto, hapus background, pilih warna latar, ubah rasio, ekspor. 
 - Ukuran simpan di HP ±33 MB (unduhan pertama sebaiknya lewat Wi-Fi). Setiap rilis berikutnya: naikkan `VERSI` di sw.js
 - Kalau dibungkus APK, service worker tidak diperlukan (berkas sudah di dalam APK)
 - **Deploy**: belum ada situs Netlify untuk SmartBG (dicek 5 Nov 2026, 26 situs lain ada). Deploy dari sesi Claude ditolak jaringan (403), jadi dilakukan manual: Netlify > Add new site > Import from Git > `iwaka91/smartbg`, cabang `main`, tanpa build command, publish directory `.`. Setelah itu pasang domain `smartbg.totogutomo.com` bila diinginkan
+- 5 Nov 2026: situs dideploy oleh pengguna di smartbg.totogutomo.com. Repo diaudit lalu dijadikan **publik** dengan lisensi **MIT** (`LICENSE`, `NOTICE.md`). Audit: tanpa kunci rahasia atau kata sandi di 7 commit, tanpa foto orang, surel pengembang memang tampil di halaman Tentang
 - Langkah berikutnya: uji di HP (Pasang, mode pesawat, Percantik offline), lalu bungkus APK bila perlu
 
 ### v2.7.1 (30 Okt 2026): versi stabil, final candidate
